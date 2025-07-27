@@ -11,9 +11,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
-import java.util.List;
-
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -183,25 +181,25 @@ public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long
     long countPendingOrdersByWarehouse(@Param("warehouseId") Long warehouseId);
 
     /**
-     * 查找今日入库单
+     * 查找今日入库单 - H2/MySQL兼容版本
      */
-    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND DATE(i.createdTime) = CURRENT_DATE ORDER BY i.createdTime DESC")
+    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND CAST(i.createdTime AS DATE) = CURRENT_DATE ORDER BY i.createdTime DESC")
     List<InboundOrder> findTodayOrders();
 
     /**
-     * 查找本周入库单
+     * 查找本周入库单 - H2/MySQL兼容版本（使用日期范围替代WEEK函数）
      */
-    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND YEARWEEK(i.createdTime) = YEARWEEK(NOW()) ORDER BY i.createdTime DESC")
-    List<InboundOrder> findThisWeekOrders();
+    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND i.createdTime >= :weekStart AND i.createdTime < :weekEnd ORDER BY i.createdTime DESC")
+    List<InboundOrder> findThisWeekOrders(@Param("weekStart") LocalDateTime weekStart, @Param("weekEnd") LocalDateTime weekEnd);
 
     /**
-     * 查找本月入库单
+     * 查找本月入库单 - H2/MySQL兼容版本（使用日期范围替代MONTH函数）
      */
-    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND YEAR(i.createdTime) = YEAR(NOW()) AND MONTH(i.createdTime) = MONTH(NOW()) ORDER BY i.createdTime DESC")
-    List<InboundOrder> findThisMonthOrders();
+    @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND i.createdTime >= :monthStart AND i.createdTime < :monthEnd ORDER BY i.createdTime DESC")
+    List<InboundOrder> findThisMonthOrders(@Param("monthStart") LocalDateTime monthStart, @Param("monthEnd") LocalDateTime monthEnd);
 
     /**
-     * 查找逾期未执行的入库单
+     * 查找逾期未执行的入库单 - H2/MySQL兼容版本
      */
     @Query("SELECT i FROM InboundOrder i WHERE i.deleted = false AND i.status = 'APPROVED' AND i.plannedDate < CURRENT_DATE AND i.operationTime IS NULL ORDER BY i.plannedDate ASC")
     List<InboundOrder> findOverdueOrders();
@@ -215,11 +213,16 @@ public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long
     java.math.BigDecimal sumAmountByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 生成入库单号
+     * 生成入库单号 - 暂时禁用，使用Java代码生成
      */
-    @Query("SELECT CONCAT('IN', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(i.orderNumber, 11) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
-           "FROM InboundOrder i WHERE i.orderNumber LIKE CONCAT('IN', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
-    String generateOrderNumber();
+    // @Query("SELECT CONCAT('IN', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(i.orderNumber, 11) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
+    //        "FROM InboundOrder i WHERE i.orderNumber LIKE CONCAT('IN', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
+    // String generateOrderNumber();
+
+    /**
+     * 根据订单号前缀查找订单，按订单号降序排列
+     */
+    List<InboundOrder> findByOrderNumberStartingWithOrderByOrderNumberDesc(String prefix);
 
 
 
@@ -232,15 +235,15 @@ public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long
     long countByStatus(@Param("status") ApprovalStatus status);
 
     /**
-     * 根据日期和仓库统计入库单数量
+     * 根据日期和仓库统计入库单数量 - H2兼容版本
      */
-    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE DATE(i.createdTime) = :date AND i.warehouse.id = :warehouseId")
+    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE CAST(i.createdTime AS DATE) = :date AND i.warehouse.id = :warehouseId")
     long countByDateAndWarehouse(@Param("date") LocalDate date, @Param("warehouseId") Long warehouseId);
 
     /**
-     * 根据日期统计入库单数量
+     * 根据日期统计入库单数量 - H2兼容版本
      */
-    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE DATE(i.createdTime) = :date")
+    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE CAST(i.createdTime AS DATE) = :date")
     long countByDate(@Param("date") LocalDate date);
 
     // 简化的查询方法，直接返回实体对象
@@ -273,39 +276,39 @@ public interface InboundOrderRepository extends JpaRepository<InboundOrder, Long
     java.math.BigDecimal sumExecutedAmount();
 
     /**
-     * 按日期范围统计入库单数量
+     * 按日期范围统计入库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.deleted = false AND DATE(i.createdTime) >= :startDate AND DATE(i.createdTime) <= :endDate")
+    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.deleted = false AND CAST(i.createdTime AS DATE) >= :startDate AND CAST(i.createdTime AS DATE) <= :endDate")
     long countByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期范围统计入库单数量
+     * 按仓库和日期范围统计入库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND DATE(i.createdTime) >= :startDate AND DATE(i.createdTime) <= :endDate")
+    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND CAST(i.createdTime AS DATE) >= :startDate AND CAST(i.createdTime AS DATE) <= :endDate")
     long countByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期统计入库单数量
+     * 按仓库和日期统计入库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND DATE(i.createdTime) = :date")
+    @Query("SELECT COUNT(i) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND CAST(i.createdTime AS DATE) = :date")
     long countByWarehouseAndDate(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 
     /**
-     * 按日期范围统计入库金额
+     * 按日期范围统计入库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.deleted = false AND DATE(i.createdTime) >= :startDate AND DATE(i.createdTime) <= :endDate")
+    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.deleted = false AND CAST(i.createdTime AS DATE) >= :startDate AND CAST(i.createdTime AS DATE) <= :endDate")
     java.math.BigDecimal sumAmountByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期统计入库金额
+     * 按仓库和日期统计入库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND DATE(i.createdTime) = :date")
+    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND CAST(i.createdTime AS DATE) = :date")
     java.math.BigDecimal sumAmountByWarehouseAndDate(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 
     /**
-     * 按日期统计入库金额
+     * 按日期统计入库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.deleted = false AND DATE(i.createdTime) = :date")
+    @Query("SELECT COALESCE(SUM(i.totalAmount), 0) FROM InboundOrder i WHERE i.deleted = false AND CAST(i.createdTime AS DATE) = :date")
     java.math.BigDecimal sumAmountByDate(@Param("date") LocalDate date);
 
 }

@@ -5,6 +5,9 @@ import com.warehouse.dto.WarehouseDTO;
 import com.warehouse.security.JwtTokenUtil;
 import com.warehouse.security.UserDetailsServiceImpl.UserPrincipal;
 import com.warehouse.service.WarehouseService;
+import com.warehouse.service.UserService;
+import com.warehouse.service.OperationLogService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,13 +44,19 @@ public class AuthController {
     @Autowired
     private WarehouseService warehouseService;
 
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private OperationLogService operationLogService;
+
 
 
     /**
      * 用户登录
      */
     @PostMapping("/login")
-    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+    public ApiResponse<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         try {
             // 认证用户
             Authentication authentication = authenticationManager.authenticate(
@@ -86,6 +95,20 @@ public class AuthController {
             userInfo.setHasManagePermission(userPrincipal.hasManagePermission());
             
             response.setUser(userInfo);
+
+            // 更新最后登录信息和记录操作日志
+            try {
+                String clientIp = getClientIpAddress(httpRequest);
+                String userAgent = httpRequest.getHeader("User-Agent");
+
+                userService.updateLastLoginInfo(userPrincipal.getId(), clientIp);
+
+                // 记录登录日志
+                operationLogService.recordLoginLog(userPrincipal.getUser(), clientIp, userAgent);
+            } catch (Exception e) {
+                // 记录日志但不影响登录流程
+                System.err.println("更新登录信息失败: " + e.getMessage());
+            }
 
             return ApiResponse.success("登录成功", response);
 
@@ -397,5 +420,22 @@ public class AuthController {
         public void setIsWarehouseAdmin(Boolean isWarehouseAdmin) { this.isWarehouseAdmin = isWarehouseAdmin; }
         public Boolean getHasManagePermission() { return hasManagePermission; }
         public void setHasManagePermission(Boolean hasManagePermission) { this.hasManagePermission = hasManagePermission; }
+    }
+
+    /**
+     * 获取客户端IP地址
+     */
+    private String getClientIpAddress(HttpServletRequest request) {
+        String xForwardedFor = request.getHeader("X-Forwarded-For");
+        if (xForwardedFor != null && !xForwardedFor.isEmpty() && !"unknown".equalsIgnoreCase(xForwardedFor)) {
+            return xForwardedFor.split(",")[0];
+        }
+
+        String xRealIp = request.getHeader("X-Real-IP");
+        if (xRealIp != null && !xRealIp.isEmpty() && !"unknown".equalsIgnoreCase(xRealIp)) {
+            return xRealIp;
+        }
+
+        return request.getRemoteAddr();
     }
 }

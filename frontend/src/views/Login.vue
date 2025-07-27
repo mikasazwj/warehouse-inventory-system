@@ -134,7 +134,7 @@ const handleLogin = async () => {
 
     router.push(defaultPage)
   } catch (error) {
-    console.error('登录失败:', error)
+    // 登录失败，不输出敏感信息到控制台
   } finally {
     loading.value = false
   }

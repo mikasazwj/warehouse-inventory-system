@@ -117,8 +117,8 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrder, Lo
            "(:status IS NULL OR t.status = :status) AND " +
            "(:sourceWarehouseId IS NULL OR t.fromWarehouse.id = :sourceWarehouseId) AND " +
            "(:targetWarehouseId IS NULL OR t.toWarehouse.id = :targetWarehouseId) AND " +
-           "(:startDate IS NULL OR DATE(t.createdTime) >= :startDate) AND " +
-           "(:endDate IS NULL OR DATE(t.createdTime) <= :endDate)")
+           "(:startDate IS NULL OR CAST(t.createdTime AS DATE) >= :startDate) AND " +
+           "(:endDate IS NULL OR CAST(t.createdTime AS DATE) <= :endDate)")
     Page<TransferOrder> findByMultipleConditionsWithDateRange(@Param("orderNumber") String orderNumber,
                                                              @Param("status") ApprovalStatus status,
                                                              @Param("sourceWarehouseId") Long sourceWarehouseId,
@@ -164,13 +164,13 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrder, Lo
     long countExecutedOrders();
 
     /**
-     * 查找今日调拨单
+     * 查找今日调拨单 - H2/MySQL兼容版本
      */
-    @Query("SELECT t FROM TransferOrder t WHERE t.deleted = false AND DATE(t.createdTime) = CURRENT_DATE ORDER BY t.createdTime DESC")
+    @Query("SELECT t FROM TransferOrder t WHERE t.deleted = false AND CAST(t.createdTime AS DATE) = CURRENT_DATE ORDER BY t.createdTime DESC")
     List<TransferOrder> findTodayOrders();
 
     /**
-     * 查找逾期未执行的调拨单
+     * 查找逾期未执行的调拨单 - H2/MySQL兼容版本
      */
     @Query("SELECT t FROM TransferOrder t WHERE t.deleted = false AND t.status = 'APPROVED' AND t.plannedDate < CURRENT_DATE AND t.operationTime IS NULL ORDER BY t.plannedDate ASC")
     List<TransferOrder> findOverdueOrders();
@@ -188,33 +188,38 @@ public interface TransferOrderRepository extends JpaRepository<TransferOrder, Lo
     long countTransferInByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 生成调拨单号
+     * 生成调拨单号 - 暂时禁用，使用Java代码生成
      */
-    @Query("SELECT CONCAT('TR', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(t.orderNumber, 11) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
-           "FROM TransferOrder t WHERE t.orderNumber LIKE CONCAT('TR', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
-    String generateOrderNumber();
+    // @Query("SELECT CONCAT('TR', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(t.orderNumber, 11) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
+    //        "FROM TransferOrder t WHERE t.orderNumber LIKE CONCAT('TR', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
+    // String generateOrderNumber();
 
     /**
-     * 按日期范围统计调拨单数量
+     * 根据订单号前缀查找订单，按订单号降序排列
      */
-    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE t.deleted = false AND DATE(t.createdTime) >= :startDate AND DATE(t.createdTime) <= :endDate")
+    List<TransferOrder> findByOrderNumberStartingWithOrderByOrderNumberDesc(String prefix);
+
+    /**
+     * 按日期范围统计调拨单数量 - H2/MySQL兼容版本
+     */
+    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE t.deleted = false AND CAST(t.createdTime AS DATE) >= :startDate AND CAST(t.createdTime AS DATE) <= :endDate")
     long countByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期范围统计调拨单数量（源仓库或目标仓库）
+     * 按仓库和日期范围统计调拨单数量（源仓库或目标仓库） - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE (t.fromWarehouse.id = :warehouseId OR t.toWarehouse.id = :warehouseId) AND t.deleted = false AND DATE(t.createdTime) >= :startDate AND DATE(t.createdTime) <= :endDate")
+    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE (t.fromWarehouse.id = :warehouseId OR t.toWarehouse.id = :warehouseId) AND t.deleted = false AND CAST(t.createdTime AS DATE) >= :startDate AND CAST(t.createdTime AS DATE) <= :endDate")
     long countByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按日期统计调拨单数量
+     * 按日期统计调拨单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE t.deleted = false AND DATE(t.createdTime) = :date")
+    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE t.deleted = false AND CAST(t.createdTime AS DATE) = :date")
     long countByDate(@Param("date") LocalDate date);
 
     /**
-     * 按仓库和日期统计调拨单数量（源仓库或目标仓库）
+     * 按仓库和日期统计调拨单数量（源仓库或目标仓库） - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE (t.fromWarehouse.id = :warehouseId OR t.toWarehouse.id = :warehouseId) AND t.deleted = false AND DATE(t.createdTime) = :date")
+    @Query("SELECT COUNT(t) FROM TransferOrder t WHERE (t.fromWarehouse.id = :warehouseId OR t.toWarehouse.id = :warehouseId) AND t.deleted = false AND CAST(t.createdTime AS DATE) = :date")
     long countByWarehouseAndDate(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 }

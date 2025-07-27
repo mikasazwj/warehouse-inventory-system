@@ -1,19 +1,28 @@
 # 开发环境专用配置
 spring:
-  # 数据源配置 - 开发环境
+  # 数据源配置 - 开发环境（H2文件数据库，数据持久化）
   datasource:
-    url: jdbc:mysql://localhost:3306/warehouse_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true&createDatabaseIfNotExist=true
-    username: root
-    password: root
+    url: jdbc:h2:file:~/warehouse_data/warehouse_db;DB_CLOSE_DELAY=-1;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
     
-  # JPA配置 - 开发环境
+  # JPA配置 - 开发环境（H2数据库）
   jpa:
     hibernate:
-      ddl-auto: create-drop  # 每次重启重新创建表
-    show-sql: true
+      ddl-auto: update  # 改为update，避免每次重新创建表
+    show-sql: false     # 关闭SQL输出
     properties:
       hibernate:
-        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false  # 关闭SQL格式化
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  # H2控制台配置
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
         
   # 开发工具
   devtools:
@@ -26,18 +35,20 @@ spring:
 # 日志配置 - 开发环境
 logging:
   level:
-    com.warehouse: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.warehouse: WARN          # 进一步减少应用日志
+    org.springframework.web: ERROR
+    org.springframework.security: ERROR
+    org.hibernate.SQL: ERROR     # 关闭Hibernate SQL日志
+    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
+    org.hibernate.orm.deprecation: ERROR  # 关闭废弃警告
   pattern:
     console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"
 
 # JWT配置 - 开发环境
 jwt:
-  secret: dev-jwt-secret-key
+  secret: dev-jwt-secret-key-warehouse-inventory-system-2024-very-long-secure-key-for-hmac-sha256-algorithm
   expiration: 86400000  # 24小时，开发环境可以设置更长
+  refresh-expiration: 604800000  # 7天
 
 # 系统配置 - 开发环境
 warehouse:

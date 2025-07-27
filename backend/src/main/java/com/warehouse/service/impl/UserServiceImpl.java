@@ -13,6 +13,8 @@ import com.warehouse.repository.WarehouseRepository;
 import com.warehouse.service.UserService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
@@ -580,5 +582,25 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("用户", "username", username));
         user.setAvatarUrl(avatarUrl);
         userRepository.save(user);
+    }
+
+    @Override
+    public UserDTO updateUserProfile(Long id, UserDTO.UpdateProfileRequest request) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("用户", "id", id));
+
+        // 更新个人资料信息
+        if (request.getRealName() != null) {
+            user.setRealName(request.getRealName());
+        }
+        if (request.getEmail() != null) {
+            user.setEmail(request.getEmail());
+        }
+        if (request.getPhone() != null) {
+            user.setPhone(request.getPhone());
+        }
+
+        User savedUser = userRepository.save(user);
+        return convertToDTO(savedUser);
     }
 }

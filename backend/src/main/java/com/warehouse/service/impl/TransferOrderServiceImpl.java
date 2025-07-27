@@ -436,8 +436,27 @@ public class TransferOrderServiceImpl implements TransferOrderService {
 
     @Override
     public String generateOrderNumber() {
-        String orderNumber = transferOrderRepository.generateOrderNumber();
-        return orderNumber != null ? orderNumber : "TR" + System.currentTimeMillis();
+        // 使用Java代码生成订单号：TR + 年月日 + 3位序号
+        String dateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        String prefix = "TR" + dateStr;
+
+        // 查找今天已有的最大序号
+        List<TransferOrder> todayOrders = transferOrderRepository.findByOrderNumberStartingWithOrderByOrderNumberDesc(prefix);
+
+        int nextSeq = 1;
+        if (!todayOrders.isEmpty()) {
+            String lastOrderNumber = todayOrders.get(0).getOrderNumber();
+            if (lastOrderNumber.length() >= prefix.length() + 3) {
+                try {
+                    String seqStr = lastOrderNumber.substring(prefix.length());
+                    nextSeq = Integer.parseInt(seqStr) + 1;
+                } catch (NumberFormatException e) {
+                    nextSeq = 1;
+                }
+            }
+        }
+
+        return prefix + String.format("%03d", nextSeq);
     }
 
     @Override

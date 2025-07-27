@@ -1,124 +1,52 @@
-# 库房库存管理系统配置文件 - 本地开发环境
+# 默认配置文件
+spring:
+  profiles:
+    active: dev  # 默认激活开发环境配置
+  
+  # 应用基本信息
+  application:
+    name: warehouse-inventory-system
+    
+  # 数据源配置 - 使用H2文件数据库（数据持久化）
+  datasource:
+    url: jdbc:h2:file:~/warehouse_data/warehouse_db;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=MySQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+    
+  # JPA配置
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: false
+    database-platform: org.hibernate.dialect.H2Dialect
+
+  # H2控制台配置
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+# JWT配置
+jwt:
+  secret: default-jwt-secret-key-warehouse-inventory-system-2024-very-long-secure-key-for-hmac-sha256-algorithm
+  expiration: 86400000  # 24小时
+  refresh-expiration: 604800000  # 7天
+
+# 服务器配置
 server:
   port: 8080
 
-spring:
-  application:
-    name: warehouse-inventory-system
-
-  profiles:
-    active: dev
-
-  main:
-    allow-bean-definition-overriding: true
-
-  # 数据源配置 - 本地开发环境
-  datasource:
-    url: jdbc:mysql://localhost:3306/warehouse_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true&createDatabaseIfNotExist=true
-    username: root
-    password: root
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    hikari:
-      minimum-idle: 2
-      maximum-pool-size: 10
-      auto-commit: true
-      idle-timeout: 30000
-      pool-name: WarehouseHikariCP
-      max-lifetime: 1800000
-      connection-timeout: 30000
-      connection-test-query: SELECT 1
-
-  # JPA配置 - 开发环境
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-      naming:
-        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
-    show-sql: true
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.MySQL8Dialect
-        format_sql: true
-        jdbc:
-          time_zone: Asia/Shanghai
-
-    open-in-view: false
-    database-platform: org.hibernate.dialect.MySQL8Dialect
-
-  # SQL初始化配置
-  sql:
-    init:
-      mode: always
-      schema-locations: classpath:db/schema.sql
-      data-locations: classpath:db/data.sql
-      continue-on-error: true
-
-  # Jackson配置
-  jackson:
-    date-format: yyyy-MM-dd HH:mm:ss
-    time-zone: Asia/Shanghai
-    serialization:
-      write-dates-as-timestamps: false
-      fail-on-empty-beans: false
-    deserialization:
-      fail-on-unknown-properties: false
-
-  # 文件上传配置
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
-
-  # 开发工具配置
-  devtools:
-    restart:
-      enabled: true
-    livereload:
-      enabled: true
-
-# JWT配置 - 开发环境简化
-jwt:
-  secret: dev-warehouse-jwt-secret-key-2024
-  expiration: 86400000 # 24小时
-  refresh-expiration: 604800000 # 7天
-
-# 系统配置 - 本地开发
-warehouse:
-  # 文件存储路径
-  file:
-    upload-path: ./uploads/
-    max-size: 10MB
-
-  # 库存预警配置
-  inventory:
-    low-stock-threshold: 5
-    warning-enabled: true
-
-  # 审批配置 - 开发环境简化
-  approval:
-    auto-approve-threshold: 100
-    max-approval-days: 7
-
-# 日志配置 - 开发环境
+# 日志配置
 logging:
   level:
-    com.warehouse: DEBUG
-    org.springframework.web: DEBUG
-    org.springframework.security: DEBUG
-    org.hibernate.SQL: DEBUG
-    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
-    root: INFO
-  pattern:
-    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"
-
-# 监控配置 - 开发环境
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  endpoint:
-    health:
-      show-details: always
-
-
+    com.warehouse: INFO
+    org.springframework.web: WARN
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.hibernate.orm.deprecation: ERROR

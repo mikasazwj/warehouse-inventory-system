@@ -151,13 +151,13 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
     long countPendingOrders();
 
     /**
-     * 查找今日出库单
+     * 查找今日出库单 - H2/MySQL兼容版本
      */
-    @Query("SELECT o FROM OutboundOrder o WHERE o.deleted = false AND DATE(o.createdTime) = CURRENT_DATE ORDER BY o.createdTime DESC")
+    @Query("SELECT o FROM OutboundOrder o WHERE o.deleted = false AND CAST(o.createdTime AS DATE) = CURRENT_DATE ORDER BY o.createdTime DESC")
     List<OutboundOrder> findTodayOrders();
 
     /**
-     * 查找逾期未执行的出库单
+     * 查找逾期未执行的出库单 - H2/MySQL兼容版本
      */
     @Query("SELECT o FROM OutboundOrder o WHERE o.deleted = false AND o.status = 'APPROVED' AND o.plannedDate < CURRENT_DATE AND o.operationTime IS NULL ORDER BY o.plannedDate ASC")
     List<OutboundOrder> findOverdueOrders();
@@ -175,11 +175,16 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
     java.math.BigDecimal sumAmountByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 生成出库单号
+     * 生成出库单号 - 暂时禁用，使用Java代码生成
      */
-    @Query("SELECT CONCAT('OUT', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 12) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
-           "FROM OutboundOrder o WHERE o.orderNumber LIKE CONCAT('OUT', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
-    String generateOrderNumber();
+    // @Query("SELECT CONCAT('OUT', DATE_FORMAT(NOW(), '%Y%m%d'), LPAD(CAST(COALESCE(MAX(CAST(SUBSTRING(o.orderNumber, 12) AS INTEGER)), 0) + 1 AS STRING), 3, '0')) " +
+    //        "FROM OutboundOrder o WHERE o.orderNumber LIKE CONCAT('OUT', DATE_FORMAT(NOW(), '%Y%m%d'), '%')")
+    // String generateOrderNumber();
+
+    /**
+     * 根据订单号前缀查找订单，按订单号降序排列
+     */
+    List<OutboundOrder> findByOrderNumberStartingWithOrderByOrderNumberDesc(String prefix);
 
     /**
      * 查找所有未删除的出库单
@@ -213,15 +218,15 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
     long countByStatus(@Param("status") ApprovalStatus status);
 
     /**
-     * 根据日期和仓库统计出库单数量
+     * 根据日期和仓库统计出库单数量 - H2兼容版本
      */
-    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE DATE(o.createdTime) = :date AND o.warehouse.id = :warehouseId")
+    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE CAST(o.createdTime AS DATE) = :date AND o.warehouse.id = :warehouseId")
     long countByDateAndWarehouse(@Param("date") LocalDate date, @Param("warehouseId") Long warehouseId);
 
     /**
-     * 根据日期统计出库单数量
+     * 根据日期统计出库单数量 - H2兼容版本
      */
-    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE DATE(o.createdTime) = :date")
+    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE CAST(o.createdTime AS DATE) = :date")
     long countByDate(@Param("date") LocalDate date);
 
     // 简化的查询方法，直接返回实体对象
@@ -231,39 +236,39 @@ public interface OutboundOrderRepository extends JpaRepository<OutboundOrder, Lo
     List<OutboundOrder> findTop5ByWarehouseIdOrderByCreatedTimeDesc(Long warehouseId);
 
     /**
-     * 按日期范围统计出库单数量
+     * 按日期范围统计出库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.deleted = false AND DATE(o.createdTime) >= :startDate AND DATE(o.createdTime) <= :endDate")
+    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.deleted = false AND CAST(o.createdTime AS DATE) >= :startDate AND CAST(o.createdTime AS DATE) <= :endDate")
     long countByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期范围统计出库单数量
+     * 按仓库和日期范围统计出库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND DATE(o.createdTime) >= :startDate AND DATE(o.createdTime) <= :endDate")
+    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND CAST(o.createdTime AS DATE) >= :startDate AND CAST(o.createdTime AS DATE) <= :endDate")
     long countByWarehouseAndDateRange(@Param("warehouseId") Long warehouseId, @Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期统计出库单数量
+     * 按仓库和日期统计出库单数量 - H2/MySQL兼容版本
      */
-    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND DATE(o.createdTime) = :date")
+    @Query("SELECT COUNT(o) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND CAST(o.createdTime AS DATE) = :date")
     long countByWarehouseAndDate(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 
     /**
-     * 按日期范围统计出库金额
+     * 按日期范围统计出库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.deleted = false AND DATE(o.createdTime) >= :startDate AND DATE(o.createdTime) <= :endDate")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.deleted = false AND CAST(o.createdTime AS DATE) >= :startDate AND CAST(o.createdTime AS DATE) <= :endDate")
     java.math.BigDecimal sumAmountByDateRange(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
     /**
-     * 按仓库和日期统计出库金额
+     * 按仓库和日期统计出库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND DATE(o.createdTime) = :date")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.warehouse.id = :warehouseId AND o.deleted = false AND CAST(o.createdTime AS DATE) = :date")
     java.math.BigDecimal sumAmountByWarehouseAndDate(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 
     /**
-     * 按日期统计出库金额
+     * 按日期统计出库金额 - H2/MySQL兼容版本
      */
-    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.deleted = false AND DATE(o.createdTime) = :date")
+    @Query("SELECT COALESCE(SUM(o.totalAmount), 0) FROM OutboundOrder o WHERE o.deleted = false AND CAST(o.createdTime AS DATE) = :date")
     java.math.BigDecimal sumAmountByDate(@Param("date") LocalDate date);
 
 }

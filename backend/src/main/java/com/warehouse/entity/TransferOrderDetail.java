@@ -44,6 +44,9 @@ public class TransferOrderDetail extends BaseEntity {
     @Column(name = "actual_quantity", precision = 15, scale = 3)
     private BigDecimal actualQuantity;
 
+    @Column(name = "batch_number", length = 100)
+    private String batchNumber;
+
     @Column(name = "remark", length = 500)
     private String remark;
 
@@ -122,6 +125,14 @@ public class TransferOrderDetail extends BaseEntity {
 
     public void setRemark(String remark) {
         this.remark = remark;
+    }
+
+    public String getBatchNumber() {
+        return batchNumber;
+    }
+
+    public void setBatchNumber(String batchNumber) {
+        this.batchNumber = batchNumber;
     }
 
     // Business methods

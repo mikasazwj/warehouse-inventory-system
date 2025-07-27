@@ -28,7 +28,7 @@ export const useUserStore = defineStore('user', {
     hasApprovalPermission: (state) => ['ROLE_ADMIN', 'WAREHOUSE_ADMIN', 'TEAM_LEADER', 'SQUAD_LEADER'].includes(state.userInfo.role),
     // 判断是否有管理权限
     hasManagePermission: (state) => ['ROLE_ADMIN', 'WAREHOUSE_ADMIN'].includes(state.userInfo.role),
-    avatar: (state) => state.userInfo.avatar || '',
+
     
     // 权限检查
     hasPermission: (state) => (permission) => {
@@ -181,10 +181,12 @@ export const useUserStore = defineStore('user', {
       }
     },
 
+
+
     // 更新用户信息
     async updateProfile(profileForm) {
       try {
-        const response = await request.put('/users/profile', profileForm)
+        const response = await request.put('/users/current/profile', profileForm)
         if (response.success) {
           this.userInfo = { ...this.userInfo, ...response.data }
           localStorage.setItem(USER_INFO_KEY, JSON.stringify(this.userInfo))

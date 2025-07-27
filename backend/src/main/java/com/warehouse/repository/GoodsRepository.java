@@ -145,15 +145,23 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
     List<Goods> findGoodsWithInventory();
 
     /**
-     * 查找指定仓库有库存的货物
+     * 查找指定仓库有库存的货物 - 优化版本，使用JOIN FETCH
      */
-    @Query("SELECT DISTINCT g FROM Goods g JOIN Inventory i ON g.id = i.goods.id WHERE g.deleted = false AND i.warehouse.id = :warehouseId AND i.quantity > 0")
+    @Query("SELECT DISTINCT g FROM Goods g " +
+           "LEFT JOIN FETCH g.category " +
+           "JOIN Inventory i ON g.id = i.goods.id " +
+           "WHERE g.deleted = false AND i.warehouse.id = :warehouseId AND i.quantity > 0 " +
+           "ORDER BY g.code")
     List<Goods> findGoodsWithInventoryInWarehouse(@Param("warehouseId") Long warehouseId);
 
     /**
-     * 查找低库存货物
+     * 查找低库存货物 - 优化版本，使用JOIN FETCH
      */
-    @Query("SELECT DISTINCT g FROM Goods g JOIN Inventory i ON g.id = i.goods.id WHERE g.deleted = false AND i.quantity <= g.minStock AND g.minStock > 0")
+    @Query("SELECT DISTINCT g FROM Goods g " +
+           "LEFT JOIN FETCH g.category " +
+           "JOIN Inventory i ON g.id = i.goods.id " +
+           "WHERE g.deleted = false AND i.quantity <= g.minStock AND g.minStock > 0 " +
+           "ORDER BY g.code")
     List<Goods> findLowStockGoods();
 
     /**

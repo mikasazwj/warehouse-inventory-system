@@ -84,7 +84,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     List<Inventory> findNearExpiryInventoriesByWarehouse(@Param("warehouseId") Long warehouseId, @Param("date") LocalDate date);
 
     /**
-     * 查找已过期的库存
+     * 查找已过期的库存 - H2/MySQL兼容版本
      */
     @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.expiryDate IS NOT NULL AND i.expiryDate < CURRENT_DATE AND i.quantity > 0 ORDER BY i.expiryDate ASC")
     List<Inventory> findExpiredInventories();
@@ -589,7 +589,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "JOIN iod.goods g " +
            "LEFT JOIN g.category c " +
            "WHERE io.warehouse.id = :warehouseId AND io.deleted = false " +
-           "AND DATE(io.createdTime) >= :startDate AND DATE(io.createdTime) <= :endDate " +
+           "AND CAST(io.createdTime AS DATE) >= :startDate AND CAST(io.createdTime AS DATE) <= :endDate " +
            "GROUP BY g.id, g.code, g.name, c.name " +
            "ORDER BY SUM(iod.quantity) DESC")
     List<Object[]> findTopInboundGoodsByWarehouse(@Param("warehouseId") Long warehouseId,
@@ -605,7 +605,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "JOIN iod.goods g " +
            "LEFT JOIN g.category c " +
            "WHERE io.deleted = false " +
-           "AND DATE(io.createdTime) >= :startDate AND DATE(io.createdTime) <= :endDate " +
+           "AND CAST(io.createdTime AS DATE) >= :startDate AND CAST(io.createdTime AS DATE) <= :endDate " +
            "GROUP BY g.id, g.code, g.name, c.name " +
            "ORDER BY SUM(iod.quantity) DESC")
     List<Object[]> findTopInboundGoods(@Param("startDate") LocalDate startDate,
@@ -620,7 +620,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "JOIN ood.goods g " +
            "LEFT JOIN g.category c " +
            "WHERE oo.warehouse.id = :warehouseId AND oo.deleted = false " +
-           "AND DATE(oo.createdTime) >= :startDate AND DATE(oo.createdTime) <= :endDate " +
+           "AND CAST(oo.createdTime AS DATE) >= :startDate AND CAST(oo.createdTime AS DATE) <= :endDate " +
            "GROUP BY g.id, g.code, g.name, c.name " +
            "ORDER BY SUM(ood.quantity) DESC")
     List<Object[]> findTopOutboundGoodsByWarehouse(@Param("warehouseId") Long warehouseId,
@@ -636,7 +636,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "JOIN ood.goods g " +
            "LEFT JOIN g.category c " +
            "WHERE oo.deleted = false " +
-           "AND DATE(oo.createdTime) >= :startDate AND DATE(oo.createdTime) <= :endDate " +
+           "AND CAST(oo.createdTime AS DATE) >= :startDate AND CAST(oo.createdTime AS DATE) <= :endDate " +
            "GROUP BY g.id, g.code, g.name, c.name " +
            "ORDER BY SUM(ood.quantity) DESC")
     List<Object[]> findTopOutboundGoods(@Param("startDate") LocalDate startDate,
@@ -750,8 +750,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "    SELECT DISTINCT ood.goods.id FROM OutboundOrderDetail ood " +
            "    JOIN ood.outboundOrder oo " +
            "    WHERE oo.deleted = false " +
-           "    AND DATE(oo.createdTime) >= :startDate " +
-           "    AND DATE(oo.createdTime) <= :endDate" +
+           "    AND CAST(oo.createdTime AS DATE) >= :startDate " +
+           "    AND CAST(oo.createdTime AS DATE) <= :endDate" +
            ")")
     long countSlowMovingItems(@Param("startDate") LocalDate startDate, @Param("endDate") LocalDate endDate);
 
@@ -764,8 +764,8 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "    SELECT DISTINCT ood.goods.id FROM OutboundOrderDetail ood " +
            "    JOIN ood.outboundOrder oo " +
            "    WHERE oo.deleted = false AND oo.warehouse.id = :warehouseId " +
-           "    AND DATE(oo.createdTime) >= :startDate " +
-           "    AND DATE(oo.createdTime) <= :endDate" +
+           "    AND CAST(oo.createdTime AS DATE) >= :startDate " +
+           "    AND CAST(oo.createdTime AS DATE) <= :endDate" +
            ")")
     long countSlowMovingItemsByWarehouse(@Param("warehouseId") Long warehouseId,
                                         @Param("startDate") LocalDate startDate,

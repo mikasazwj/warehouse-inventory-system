@@ -27,7 +27,9 @@ public class UserDTO {
     @Size(max = 50, message = "真实姓名长度不能超过50个字符")
     private String realName;
 
+    private String email;
 
+    private String phone;
 
     private UserRole role;
 
@@ -91,7 +93,21 @@ public class UserDTO {
         this.realName = realName;
     }
 
+    public String getEmail() {
+        return email;
+    }
 
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 
     public UserRole getRole() {
         return role;
@@ -336,6 +352,28 @@ public class UserDTO {
         public void setRemark(String remark) { this.remark = remark; }
         public List<Long> getWarehouseIds() { return warehouseIds; }
         public void setWarehouseIds(List<Long> warehouseIds) { this.warehouseIds = warehouseIds; }
+    }
+
+    /**
+     * 个人资料更新请求DTO
+     */
+    public static class UpdateProfileRequest {
+        @Size(max = 50, message = "真实姓名长度不能超过50个字符")
+        private String realName;
+
+        @Size(max = 100, message = "邮箱长度不能超过100个字符")
+        private String email;
+
+        @Size(max = 20, message = "手机号长度不能超过20个字符")
+        private String phone;
+
+        // Getters and Setters
+        public String getRealName() { return realName; }
+        public void setRealName(String realName) { this.realName = realName; }
+        public String getEmail() { return email; }
+        public void setEmail(String email) { this.email = email; }
+        public String getPhone() { return phone; }
+        public void setPhone(String phone) { this.phone = phone; }
     }
 
     /**

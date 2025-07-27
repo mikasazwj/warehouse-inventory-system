@@ -7,6 +7,8 @@ import com.warehouse.dto.WarehouseDTO;
 import com.warehouse.entity.User;
 import com.warehouse.enums.UserRole;
 import com.warehouse.service.UserService;
+import com.warehouse.service.OperationLogService;
+import com.warehouse.dto.OperationLogDTO;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -35,6 +37,9 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private OperationLogService operationLogService;
 
     /**
      * 创建用户
@@ -283,43 +288,6 @@ public class UserController {
     }
 
     /**
-     * 获取当前用户详细信息
-     */
-    @GetMapping("/current/profile")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<Map<String, Object>> getCurrentUserProfile() {
-        try {
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            String username = authentication.getName();
-
-            // 查找用户
-            Optional<UserDTO> userOpt = userService.findByUsername(username);
-            if (userOpt.isEmpty()) {
-                return ApiResponse.notFound("用户不存在");
-            }
-
-            UserDTO user = userOpt.get();
-            Map<String, Object> profile = new HashMap<>();
-            profile.put("id", user.getId());
-            profile.put("username", user.getUsername());
-            profile.put("realName", user.getRealName());
-            profile.put("role", user.getRole());
-            profile.put("enabled", user.getEnabled());
-            profile.put("createdTime", user.getCreatedTime());
-            profile.put("lastLoginTime", user.getLastLoginTime());
-            profile.put("loginCount", user.getLoginCount());
-            profile.put("avatarUrl", user.getAvatarUrl());
-
-            return ApiResponse.success(profile);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ApiResponse.error("获取用户信息失败: " + e.getMessage());
-        }
-    }
-
-
-
-    /**
      * 更新当前用户头像
      */
     @PostMapping("/current/avatar")
@@ -344,11 +312,14 @@ public class UserController {
                 return ApiResponse.error("文件大小不能超过2MB");
             }
 
-            // 创建上传目录
-            String uploadDir = "uploads/avatars/";
+            // 创建上传目录 - 使用绝对路径
+            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "avatars" + File.separator;
             File dir = new File(uploadDir);
             if (!dir.exists()) {
-                dir.mkdirs();
+                boolean created = dir.mkdirs();
+                if (!created) {
+                    return ApiResponse.error("无法创建上传目录");
+                }
             }
 
             // 生成文件名
@@ -362,14 +333,57 @@ public class UserController {
             // 保存文件
             file.transferTo(new File(filePath));
 
-            // 更新用户头像URL
-            String avatarUrl = "/" + filePath;
+            // 更新用户头像URL - 使用相对路径
+            String avatarUrl = "/uploads/avatars/" + filename;
             userService.updateUserAvatar(username, avatarUrl);
 
             return ApiResponse.success(avatarUrl);
         } catch (Exception e) {
             e.printStackTrace();
             return ApiResponse.error("头像更新失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 获取当前用户详细信息
+     */
+    @GetMapping("/current/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<UserDTO> getCurrentUserProfile() {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+
+            Optional<UserDTO> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                return ApiResponse.error("用户不存在");
+            }
+
+            return ApiResponse.success(userOpt.get());
+        } catch (Exception e) {
+            return ApiResponse.error("获取用户信息失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 更新当前用户个人资料
+     */
+    @PutMapping("/current/profile")
+    @PreAuthorize("isAuthenticated()")
+    public ApiResponse<UserDTO> updateCurrentUserProfile(@Valid @RequestBody UserDTO.UpdateProfileRequest request) {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+
+            Optional<UserDTO> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                return ApiResponse.error("用户不存在");
+            }
+
+            UserDTO user = userService.updateUserProfile(userOpt.get().getId(), request);
+            return ApiResponse.success("个人资料更新成功", user);
+        } catch (Exception e) {
+            return ApiResponse.error("更新个人资料失败: " + e.getMessage());
         }
     }
 
@@ -387,25 +401,38 @@ public class UserController {
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
             String username = authentication.getName();
 
-            // 暂时返回模拟数据，因为操作日志功能还未完全实现
-            List<Map<String, Object>> logs = new ArrayList<>();
-            Map<String, Object> log1 = new HashMap<>();
-            log1.put("id", 1L);
-            log1.put("action", "登录系统");
-            log1.put("description", "用户登录系统");
-            log1.put("ipAddress", "127.0.0.1");
-            log1.put("userAgent", "Chrome/120.0.0.0");
-            log1.put("createdTime", "2025-07-23 16:00:00");
-            logs.add(log1);
+            Optional<UserDTO> userOpt = userService.findByUsername(username);
+            if (!userOpt.isPresent()) {
+                return ApiResponse.error("用户不存在");
+            }
 
-            Map<String, Object> log2 = new HashMap<>();
-            log2.put("id", 2L);
-            log2.put("action", "查看仪表盘");
-            log2.put("description", "访问系统仪表盘");
-            log2.put("ipAddress", "127.0.0.1");
-            log2.put("userAgent", "Chrome/120.0.0.0");
-            log2.put("createdTime", "2025-07-23 15:00:00");
-            logs.add(log2);
+            Long userId = userOpt.get().getId();
+
+            // 解析日期参数
+            LocalDateTime startTime = null;
+            LocalDateTime endTime = null;
+            if (startDate != null && !startDate.isEmpty()) {
+                startTime = LocalDateTime.parse(startDate + "T00:00:00");
+            }
+            if (endDate != null && !endDate.isEmpty()) {
+                endTime = LocalDateTime.parse(endDate + "T23:59:59");
+            }
+
+            // 获取真实的操作日志数据
+            List<OperationLogDTO> operationLogs = operationLogService.getUserOperationLogs(userId, startTime, endTime);
+
+            // 转换为前端需要的格式
+            List<Map<String, Object>> logs = new ArrayList<>();
+            for (OperationLogDTO log : operationLogs) {
+                Map<String, Object> logMap = new HashMap<>();
+                logMap.put("id", log.getId());
+                logMap.put("action", log.getOperationType());
+                logMap.put("description", log.getOperationDesc());
+                logMap.put("ipAddress", log.getIpAddress());
+                logMap.put("userAgent", log.getUserAgent());
+                logMap.put("createdTime", log.getOperationTime());
+                logs.add(logMap);
+            }
 
             return ApiResponse.success(logs);
         } catch (Exception e) {

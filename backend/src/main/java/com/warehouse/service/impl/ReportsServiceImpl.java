@@ -55,10 +55,11 @@ public class ReportsServiceImpl implements ReportsService {
                 transferOrderRepository.countByWarehouseAndDateRange(warehouseId, startDate, endDate) :
                 transferOrderRepository.countByDateRange(startDate, endDate);
 
-            // 盘点单统计
-            long totalStocktake = warehouseId != null ?
-                stocktakeOrderRepository.countByWarehouseAndDateRange(warehouseId, startDate, endDate) :
-                stocktakeOrderRepository.countByDateRange(startDate, endDate);
+            // 盘点单统计 - 暂时注释掉
+            // long totalStocktake = warehouseId != null ?
+            //     stocktakeOrderRepository.countByWarehouseAndDateRange(warehouseId, startDate, endDate) :
+            //     stocktakeOrderRepository.countByDateRange(startDate, endDate);
+            long totalStocktake = 0; // 暂时返回0
 
             // 金额统计
             BigDecimal inboundAmount = warehouseId != null ?

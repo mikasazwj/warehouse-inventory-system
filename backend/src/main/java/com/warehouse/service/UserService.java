@@ -110,6 +110,11 @@ public interface UserService {
     void updateUserAvatar(String username, String avatarUrl);
 
     /**
+     * 更新用户个人资料
+     */
+    UserDTO updateUserProfile(Long id, UserDTO.UpdateProfileRequest request);
+
+    /**
      * 锁定用户
      */
     void lockUser(Long id);

@@ -57,8 +57,8 @@
 
         <div class="navbar-right">
           <!-- 全屏按钮 -->
-          <el-tooltip content="全屏" placement="bottom">
-            <el-button type="text" @click="toggleFullscreen" class="navbar-btn">
+          <el-tooltip content="全屏" placement="bottom" v-if="!isMobile">
+            <el-button type="text" @click="toggleFullscreen" class="navbar-btn fullscreen-btn">
               <el-icon><FullScreen /></el-icon>
             </el-button>
           </el-tooltip>
@@ -66,9 +66,9 @@
           <!-- 用户菜单 -->
           <el-dropdown @command="handleUserCommand" class="user-dropdown">
             <div class="user-info">
-              <el-avatar :size="32" :src="userStore.avatar">
-                <el-icon><User /></el-icon>
-              </el-avatar>
+              <div class="header-avatar">
+                泰盛
+              </div>
               <span class="username">{{ userStore.realName || userStore.username }}</span>
               <el-icon class="arrow-down"><ArrowDown /></el-icon>
             </div>
@@ -412,6 +412,27 @@ watch(changePasswordVisible, (visible) => {
           background: #f5f5f5;
         }
 
+        .header-avatar {
+          width: 32px;
+          height: 32px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 12px;
+          font-weight: 600;
+          letter-spacing: 1px;
+          box-shadow: 0 2px 6px rgba(102, 126, 234, 0.3);
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4);
+          }
+        }
+
         .username {
           margin: 0 8px;
           font-size: 14px;
@@ -493,6 +514,10 @@ watch(changePasswordVisible, (visible) => {
         }
 
         .navbar-right {
+          .fullscreen-btn {
+            display: none !important;
+          }
+
           .user-info {
             .user-name {
               display: none;

@@ -3,21 +3,9 @@
     <div class="profile-header">
       <div class="profile-info">
         <div class="avatar-section">
-          <el-avatar :size="80" :src="userStore.avatar">
-            <el-icon><User /></el-icon>
-          </el-avatar>
-          <el-upload
-            class="avatar-uploader"
-            action="#"
-            :show-file-list="false"
-            :before-upload="handleAvatarUpload"
-            accept="image/*"
-          >
-            <el-button type="text" class="change-avatar-btn">
-              <el-icon><Camera /></el-icon>
-              更换头像
-            </el-button>
-          </el-upload>
+          <div class="custom-avatar">
+            泰盛
+          </div>
         </div>
         <div class="user-info">
           <h2 class="username">{{ userStore.realName || userStore.username }}</h2>
@@ -55,14 +43,6 @@
               <div class="info-item">
                 <label>真实姓名</label>
                 <span>{{ userStore.userInfo.realName || '-' }}</span>
-              </div>
-              <div class="info-item">
-                <label>邮箱</label>
-                <span>{{ userStore.userInfo.email || '-' }}</span>
-              </div>
-              <div class="info-item">
-                <label>手机号</label>
-                <span>{{ userStore.userInfo.phone || '-' }}</span>
               </div>
               <div class="info-item">
                 <label>角色</label>
@@ -172,12 +152,6 @@
         <el-form-item label="真实姓名" prop="realName">
           <el-input v-model="profileForm.realName" placeholder="请输入真实姓名" />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="profileForm.email" placeholder="请输入邮箱" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="profileForm.phone" placeholder="请输入手机号" />
-        </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="editProfileVisible = false">取消</el-button>
@@ -209,21 +183,13 @@ const currentUserProfile = ref({})
 
 // 编辑资料表单
 const profileForm = reactive({
-  realName: '',
-  email: '',
-  phone: ''
+  realName: ''
 })
 
 // 表单验证规则
 const profileRules = {
   realName: [
     { max: 50, message: '真实姓名长度不能超过50个字符', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ],
-  phone: [
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
   ]
 }
 
@@ -278,25 +244,6 @@ const loadCurrentUserProfile = async () => {
   }
 }
 
-// 处理头像上传
-const handleAvatarUpload = async (file) => {
-  try {
-    const formData = new FormData()
-    formData.append('avatar', file)
-
-    const response = await request.upload('/users/current/avatar', formData)
-    if (response.success) {
-      ElMessage.success('头像更新成功')
-      // 更新用户头像
-      userStore.avatar = response.data
-      await loadCurrentUserProfile()
-    }
-  } catch (error) {
-    console.error('头像上传失败:', error)
-    ElMessage.error('头像上传失败')
-  }
-  return false // 阻止默认上传行为
-}
 
 const loadOperationLogs = async () => {
   try {
@@ -338,8 +285,6 @@ const loadOperationLogs = async () => {
 onMounted(() => {
   // 初始化编辑表单
   profileForm.realName = userStore.userInfo.realName || ''
-  profileForm.email = userStore.userInfo.email || ''
-  profileForm.phone = userStore.userInfo.phone || ''
 
   // 加载用户详细信息
   loadCurrentUserProfile()
@@ -369,9 +314,26 @@ onMounted(() => {
         text-align: center;
         margin-right: 30px;
 
-        .change-avatar-btn {
-          margin-top: 10px;
-          font-size: 12px;
+        .custom-avatar {
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: white;
+          font-size: 24px;
+          font-weight: 600;
+          letter-spacing: 2px;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          transition: all 0.3s ease;
+          margin: 0 auto;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+          }
         }
       }
 

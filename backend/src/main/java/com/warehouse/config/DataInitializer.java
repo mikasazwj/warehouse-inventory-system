@@ -9,7 +9,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+
+import java.io.File;
 
 /**
  * 数据初始化组件
@@ -26,14 +29,57 @@ public class DataInitializer implements CommandLineRunner {
     @Autowired
     private WarehouseRepository warehouseRepository;
 
+    @Autowired
+    private PasswordEncoder passwordEncoder;
+
     @Override
     public void run(String... args) throws Exception {
         logger.info("开始初始化数据...");
+
+        // 创建必要的目录
+        createDataDirectories();
 
         initializeWarehouses();
         initializeAdminUser();
 
         logger.info("数据初始化完成");
+    }
+
+    /**
+     * 创建必要的数据目录
+     */
+    private void createDataDirectories() {
+        try {
+            // 创建数据库数据目录
+            String userHome = System.getProperty("user.home");
+            File dataDir = new File(userHome, "warehouse_data");
+            if (!dataDir.exists()) {
+                boolean created = dataDir.mkdirs();
+                if (created) {
+                    logger.info("数据目录创建成功: {}", dataDir.getAbsolutePath());
+                } else {
+                    logger.warn("数据目录创建失败: {}", dataDir.getAbsolutePath());
+                }
+            } else {
+                logger.info("数据目录已存在: {}", dataDir.getAbsolutePath());
+            }
+
+            // 创建上传文件目录
+            String uploadDir = System.getProperty("user.dir") + File.separator + "uploads" + File.separator + "avatars";
+            File uploadDirFile = new File(uploadDir);
+            if (!uploadDirFile.exists()) {
+                boolean created = uploadDirFile.mkdirs();
+                if (created) {
+                    logger.info("上传目录创建成功: {}", uploadDirFile.getAbsolutePath());
+                } else {
+                    logger.warn("上传目录创建失败: {}", uploadDirFile.getAbsolutePath());
+                }
+            } else {
+                logger.info("上传目录已存在: {}", uploadDirFile.getAbsolutePath());
+            }
+        } catch (Exception e) {
+            logger.error("创建数据目录失败", e);
+        }
     }
 
     /**

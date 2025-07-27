@@ -4,6 +4,15 @@ import { useUserStore } from '@/stores/user'
 import router from '@/router'
 import NProgress from 'nprogress'
 
+// 请求去重管理
+const pendingRequests = new Map()
+
+// 生成请求唯一标识
+const generateRequestKey = (config) => {
+  const { method, url, params, data } = config
+  return `${method}:${url}:${JSON.stringify(params)}:${JSON.stringify(data)}`
+}
+
 // 创建axios实例 - 本地开发环境
 const service = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api',
@@ -20,12 +29,8 @@ service.interceptors.request.use(
 
     // 添加认证token
     const userStore = useUserStore()
-    console.log('Request拦截器 - userStore.token:', userStore.token)
     if (userStore.token) {
       config.headers.Authorization = `Bearer ${userStore.token}`
-      console.log('Request拦截器 - 添加Authorization header:', config.headers.Authorization)
-    } else {
-      console.log('Request拦截器 - 没有token')
     }
 
     // 过滤空字符串参数

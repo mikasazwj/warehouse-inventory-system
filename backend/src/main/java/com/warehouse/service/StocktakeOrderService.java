@@ -68,13 +68,6 @@ public interface StocktakeOrderService {
     PageResponse<StocktakeOrderDTO> findByPage(String keyword, Pageable pageable);
 
     /**
-     * 分页查询盘点单（带筛选条件）
-     */
-    PageResponse<StocktakeOrderDTO> findByPageWithFilters(String orderNumber, StocktakeType stocktakeType,
-                                                         ApprovalStatus status, Long warehouseId,
-                                                         LocalDate startDate, LocalDate endDate, Pageable pageable);
-
-    /**
      * 根据日期范围查找盘点单
      */
     List<StocktakeOrderDTO> findByDateRange(LocalDate startDate, LocalDate endDate);
@@ -160,27 +153,23 @@ public interface StocktakeOrderService {
     class StocktakeStatistics {
         private long totalOrders;
         private long pendingOrders;
-        private long inProgressOrders;
+        private long approvedOrders;
         private long completedOrders;
         private long cancelledOrders;
         private long overdueOrders;
 
-        public StocktakeStatistics(long totalOrders, long pendingOrders, long inProgressOrders, 
-                                 long completedOrders, long cancelledOrders, long overdueOrders) {
-            this.totalOrders = totalOrders;
-            this.pendingOrders = pendingOrders;
-            this.inProgressOrders = inProgressOrders;
-            this.completedOrders = completedOrders;
-            this.cancelledOrders = cancelledOrders;
-            this.overdueOrders = overdueOrders;
-        }
-
-        // Getters
+        // Getters and Setters
         public long getTotalOrders() { return totalOrders; }
+        public void setTotalOrders(long totalOrders) { this.totalOrders = totalOrders; }
         public long getPendingOrders() { return pendingOrders; }
-        public long getInProgressOrders() { return inProgressOrders; }
+        public void setPendingOrders(long pendingOrders) { this.pendingOrders = pendingOrders; }
+        public long getApprovedOrders() { return approvedOrders; }
+        public void setApprovedOrders(long approvedOrders) { this.approvedOrders = approvedOrders; }
         public long getCompletedOrders() { return completedOrders; }
+        public void setCompletedOrders(long completedOrders) { this.completedOrders = completedOrders; }
         public long getCancelledOrders() { return cancelledOrders; }
+        public void setCancelledOrders(long cancelledOrders) { this.cancelledOrders = cancelledOrders; }
         public long getOverdueOrders() { return overdueOrders; }
+        public void setOverdueOrders(long overdueOrders) { this.overdueOrders = overdueOrders; }
     }
 }
