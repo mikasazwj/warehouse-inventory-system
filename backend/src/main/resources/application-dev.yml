@@ -1,0 +1,45 @@
+# 开发环境专用配置
+spring:
+  # 数据源配置 - 开发环境
+  datasource:
+    url: jdbc:mysql://localhost:3306/warehouse_db?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8&useUnicode=true&createDatabaseIfNotExist=true
+    username: root
+    password: root
+    
+  # JPA配置 - 开发环境
+  jpa:
+    hibernate:
+      ddl-auto: create-drop  # 每次重启重新创建表
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        
+  # 开发工具
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+    livereload:
+      enabled: true
+
+# 日志配置 - 开发环境
+logging:
+  level:
+    com.warehouse: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+  pattern:
+    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"
+
+# JWT配置 - 开发环境
+jwt:
+  secret: dev-jwt-secret-key
+  expiration: 86400000  # 24小时，开发环境可以设置更长
+
+# 系统配置 - 开发环境
+warehouse:
+  approval:
+    auto-approve-threshold: 10  # 开发环境降低自动审批阈值

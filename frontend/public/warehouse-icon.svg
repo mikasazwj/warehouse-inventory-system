@@ -1,0 +1,33 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="16" width="48" height="40" rx="2" fill="#409EFF" stroke="#409EFF" stroke-width="2"/>
+  <rect x="12" y="20" width="40" height="32" fill="#E6F7FF" stroke="#409EFF" stroke-width="1"/>
+  
+  <!-- 货架 -->
+  <line x1="20" y1="24" x2="20" y2="48" stroke="#409EFF" stroke-width="1"/>
+  <line x1="32" y1="24" x2="32" y2="48" stroke="#409EFF" stroke-width="1"/>
+  <line x1="44" y1="24" x2="44" y2="48" stroke="#409EFF" stroke-width="1"/>
+  
+  <line x1="16" y1="32" x2="48" y2="32" stroke="#409EFF" stroke-width="1"/>
+  <line x1="16" y1="40" x2="48" y2="40" stroke="#409EFF" stroke-width="1"/>
+  
+  <!-- 货物箱子 -->
+  <rect x="17" y="25" width="6" height="6" fill="#67C23A"/>
+  <rect x="25" y="25" width="6" height="6" fill="#E6A23C"/>
+  <rect x="37" y="25" width="6" height="6" fill="#F56C6C"/>
+  
+  <rect x="17" y="33" width="6" height="6" fill="#909399"/>
+  <rect x="33" y="33" width="6" height="6" fill="#67C23A"/>
+  <rect x="41" y="33" width="6" height="6" fill="#E6A23C"/>
+  
+  <rect x="21" y="41" width="6" height="6" fill="#F56C6C"/>
+  <rect x="29" y="41" width="6" height="6" fill="#409EFF"/>
+  <rect x="37" y="41" width="6" height="6" fill="#909399"/>
+  
+  <!-- 仓库门 -->
+  <rect x="26" y="48" width="12" height="8" fill="#409EFF"/>
+  <rect x="28" y="50" width="8" height="6" fill="#E6F7FF"/>
+  
+  <!-- 标题文字区域 -->
+  <rect x="8" y="8" width="48" height="6" fill="#409EFF"/>
+  <text x="32" y="12" text-anchor="middle" fill="white" font-size="4" font-family="Arial">WAREHOUSE</text>
+</svg>
