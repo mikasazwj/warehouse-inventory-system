@@ -38,7 +38,7 @@ public class WebConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // 为静态资源添加CORS支持
         registry.addMapping("/uploads/**")
-                .allowedOrigins("http://localhost:3000")
+                .allowedOrigins("http://localhost:3000", "http://127.0.0.1:3000")
                 .allowedMethods("GET")
                 .allowedHeaders("*")
                 .allowCredentials(true);

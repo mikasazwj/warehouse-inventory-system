@@ -35,14 +35,19 @@ spring:
 # 日志配置 - 开发环境
 logging:
   level:
-    com.warehouse: WARN          # 进一步减少应用日志
-    org.springframework.web: ERROR
-    org.springframework.security: ERROR
-    org.hibernate.SQL: ERROR     # 关闭Hibernate SQL日志
-    org.hibernate.type.descriptor.sql.BasicBinder: ERROR
-    org.hibernate.orm.deprecation: ERROR  # 关闭废弃警告
+    root: INFO
+    com.warehouse: DEBUG         # 启用详细应用日志
+    org.springframework.web: INFO
+    org.springframework.security: INFO
+    org.hibernate.SQL: DEBUG     # 启用SQL日志
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    org.hibernate.orm.deprecation: WARN
   pattern:
-    console: "%clr(%d{HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"
+    console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n"
+  file:
+    name: logs/warehouse-app.log
+    max-size: 10MB
+    max-history: 30
 
 # JWT配置 - 开发环境
 jwt:

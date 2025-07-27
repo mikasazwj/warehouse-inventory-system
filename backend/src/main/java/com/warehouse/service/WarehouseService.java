@@ -160,6 +160,11 @@ public interface WarehouseService {
     WarehouseStatistics getWarehouseStatistics();
 
     /**
+     * 导出仓库数据到Excel
+     */
+    byte[] exportWarehousesToExcel(String keyword, Boolean enabled);
+
+    /**
      * 获取仓库库存统计
      */
     WarehouseDTO.InventoryStatistics getWarehouseInventoryStatistics(Long warehouseId);

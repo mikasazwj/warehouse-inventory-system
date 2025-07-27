@@ -3,15 +3,22 @@ package com.warehouse.controller;
 import com.warehouse.dto.ApiResponse;
 import com.warehouse.dto.PageResponse;
 import com.warehouse.dto.WarehouseDTO;
+import com.warehouse.exception.BusinessException;
 import com.warehouse.service.WarehouseService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -287,6 +294,40 @@ public class WarehouseController {
     public ApiResponse<WarehouseDTO.InventoryStatistics> getWarehouseInventoryStatistics(@PathVariable Long id) {
         WarehouseDTO.InventoryStatistics statistics = warehouseService.getWarehouseInventoryStatistics(id);
         return ApiResponse.success(statistics);
+    }
+
+    /**
+     * 处理导出接口的OPTIONS预检请求
+     */
+    @RequestMapping(value = "/export", method = RequestMethod.OPTIONS)
+    @CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+    public ResponseEntity<Void> exportWarehousesOptions() {
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 导出仓库数据
+     */
+    @GetMapping("/export")
+    @CrossOrigin(origins = {"http://localhost:3000", "http://127.0.0.1:3000"})
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('WAREHOUSE_ADMIN')")
+    public ResponseEntity<byte[]> exportWarehouses(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Boolean enabled) {
+        try {
+            byte[] excelData = warehouseService.exportWarehousesToExcel(keyword, enabled);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment",
+                "warehouses_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelData);
+        } catch (Exception e) {
+            throw new BusinessException("导出失败: " + e.getMessage());
+        }
     }
 
     // 内部DTO类

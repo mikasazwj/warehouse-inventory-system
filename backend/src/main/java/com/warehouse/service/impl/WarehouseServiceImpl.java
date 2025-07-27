@@ -14,9 +14,14 @@ import com.warehouse.service.WarehouseService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import java.io.ByteArrayOutputStream;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -395,5 +400,74 @@ public class WarehouseServiceImpl implements WarehouseService {
         dto.setRealName(user.getRealName());
         dto.setRole(user.getRole());
         return dto;
+    }
+
+    @Override
+    public byte[] exportWarehousesToExcel(String keyword, Boolean enabled) {
+        try {
+            // 获取所有仓库数据（不分页）
+            Pageable pageable = PageRequest.of(0, Integer.MAX_VALUE);
+            Page<Warehouse> warehousePage;
+            if (enabled != null) {
+                warehousePage = warehouseRepository.findByEnabledAndKeyword(enabled, keyword, pageable);
+            } else {
+                warehousePage = warehouseRepository.findByKeyword(keyword, pageable);
+            }
+            List<Warehouse> warehouses = warehousePage.getContent();
+
+            // 创建Excel工作簿
+            Workbook workbook = new XSSFWorkbook();
+            Sheet sheet = workbook.createSheet("仓库数据");
+
+            // 创建标题行
+            Row headerRow = sheet.createRow(0);
+            String[] headers = {
+                "序号", "仓库编码", "仓库名称", "仓库地址", "负责人", "联系电话",
+                "状态", "创建时间", "更新时间", "备注"
+            };
+
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                // 设置标题行样式
+                CellStyle headerStyle = workbook.createCellStyle();
+                Font headerFont = workbook.createFont();
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+                cell.setCellStyle(headerStyle);
+            }
+
+            // 填充数据行
+            for (int i = 0; i < warehouses.size(); i++) {
+                Warehouse warehouse = warehouses.get(i);
+                Row row = sheet.createRow(i + 1);
+
+                row.createCell(0).setCellValue(i + 1);
+                row.createCell(1).setCellValue(warehouse.getCode() != null ? warehouse.getCode() : "");
+                row.createCell(2).setCellValue(warehouse.getName() != null ? warehouse.getName() : "");
+                row.createCell(3).setCellValue(warehouse.getAddress() != null ? warehouse.getAddress() : "");
+                row.createCell(4).setCellValue(warehouse.getContactPerson() != null ? warehouse.getContactPerson() : "");
+                row.createCell(5).setCellValue(warehouse.getContactPhone() != null ? warehouse.getContactPhone() : "");
+                row.createCell(6).setCellValue(warehouse.getEnabled() ? "启用" : "禁用");
+                row.createCell(7).setCellValue(warehouse.getCreatedTime() != null ? warehouse.getCreatedTime().toString() : "");
+                row.createCell(8).setCellValue(warehouse.getUpdatedTime() != null ? warehouse.getUpdatedTime().toString() : "");
+                row.createCell(9).setCellValue(warehouse.getRemark() != null ? warehouse.getRemark() : "");
+            }
+
+            // 自动调整列宽
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+            }
+
+            // 将工作簿写入字节数组
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            workbook.write(outputStream);
+            workbook.close();
+
+            return outputStream.toByteArray();
+
+        } catch (Exception e) {
+            throw new BusinessException("导出Excel失败: " + e.getMessage());
+        }
     }
 }
