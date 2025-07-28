@@ -29,8 +29,6 @@ public class InventoryHistoryDTO {
 
     private BigDecimal afterQuantity;
 
-    private String batchNumber;
-
     private String reason;
 
     private String operatedBy;
@@ -111,13 +109,7 @@ public class InventoryHistoryDTO {
         this.afterQuantity = afterQuantity;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
 
     public String getReason() {
         return reason;

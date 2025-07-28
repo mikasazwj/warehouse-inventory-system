@@ -181,7 +181,7 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
     @Query("SELECT DISTINCT g FROM Goods g " +
            "LEFT JOIN FETCH g.category " +
            "JOIN Inventory i ON g.id = i.goods.id " +
-           "WHERE g.deleted = false AND i.quantity <= g.minStock AND g.minStock > 0 " +
+           "WHERE g.deleted = false AND i.quantity > 0 AND i.quantity < g.minStock AND g.minStock > 0 " +
            "ORDER BY g.code")
     List<Goods> findLowStockGoods();
 

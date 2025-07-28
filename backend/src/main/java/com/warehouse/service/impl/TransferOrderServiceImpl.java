@@ -388,10 +388,8 @@ public class TransferOrderServiceImpl implements TransferOrderService {
                         detail.getGoods().getId(),
                         detail.getQuantity(),
                         detail.getUnitPrice(), // 使用调拨单价
-                        null, // 调拨不涉及批次号
                         null, // 调拨不涉及生产日期
-                        null, // 调拨不涉及过期日期
-                        null  // 调拨不涉及库位
+                        null  // 调拨不涉及过期日期
                 );
             } else {
                 throw new BusinessException("源仓库货物 " + detail.getGoods().getName() + " 库存记录不存在，无法执行调拨");

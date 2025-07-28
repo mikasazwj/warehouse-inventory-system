@@ -330,10 +330,8 @@ public class InboundOrderDTO {
         @DecimalMin(value = "0.0", message = "金额不能为负数")
         private BigDecimal amount;
 
-        private String batchNumber;
         private LocalDate productionDate;
         private LocalDate expiryDate;
-        private String location;
         private String remark;
 
         // Getters and Setters
@@ -357,14 +355,10 @@ public class InboundOrderDTO {
         public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
         public BigDecimal getAmount() { return amount; }
         public void setAmount(BigDecimal amount) { this.amount = amount; }
-        public String getBatchNumber() { return batchNumber; }
-        public void setBatchNumber(String batchNumber) { this.batchNumber = batchNumber; }
         public LocalDate getProductionDate() { return productionDate; }
         public void setProductionDate(LocalDate productionDate) { this.productionDate = productionDate; }
         public LocalDate getExpiryDate() { return expiryDate; }
         public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
-        public String getLocation() { return location; }
-        public void setLocation(String location) { this.location = location; }
         public String getRemark() { return remark; }
         public void setRemark(String remark) { this.remark = remark; }
     }

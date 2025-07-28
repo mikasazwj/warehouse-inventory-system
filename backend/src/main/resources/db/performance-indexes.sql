@@ -57,8 +57,8 @@ CREATE INDEX IF NOT EXISTS idx_orders_warehouse_amount
 ON inbound_orders (warehouse_id, total_amount, created_time, deleted) WHERE deleted = false;
 
 -- 8. 复合查询优化
-CREATE INDEX IF NOT EXISTS idx_inventory_goods_warehouse_batch 
-ON inventories (goods_id, warehouse_id, batch_number, deleted) WHERE deleted = false;
+CREATE INDEX IF NOT EXISTS idx_inventory_goods_warehouse
+ON inventories (goods_id, warehouse_id, deleted) WHERE deleted = false;
 
 CREATE INDEX IF NOT EXISTS idx_order_details_order_goods 
 ON inbound_order_details (inbound_order_id, goods_id, deleted) WHERE deleted = false;

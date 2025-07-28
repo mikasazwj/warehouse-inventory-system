@@ -1,225 +1,447 @@
 <template>
-  <div class="page-container">
+  <div class="inbound-management">
+    <!-- 页面头部 -->
     <div class="page-header">
-      <h1 class="page-title">入库管理</h1>
-      <div class="page-actions">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
-          新建入库单
-        </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon"><Download /></el-icon>
+            入库管理
+          </h1>
+          <p class="page-subtitle">管理系统中的所有入库业务和流程</p>
+        </div>
+        <div class="header-actions" :class="{ 'mobile-actions': isMobile }">
+          <el-button type="primary" @click="handleAdd" :size="isMobile ? 'small' : 'default'">
+            <el-icon><Plus /></el-icon>
+            新建入库单
+          </el-button>
+          <InboundLedgerPrint
+            :selected-orders="selectedRows"
+            :all-orders="tableData"
+            @refresh="loadData"
+          />
+          <InboundExport
+            :selected-orders="selectedRows"
+            :current-page-data="tableData"
+            :search-params="searchForm"
+            :size="isMobile ? 'small' : 'default'"
+            @refresh="loadData"
+          />
+        </div>
       </div>
     </div>
 
-    <!-- 搜索表单 -->
-    <div class="search-form">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="单号">
-          <el-input
-            v-model="searchForm.orderNumber"
-            placeholder="请输入入库单号"
-            clearable
-            style="width: 180px"
-          />
-        </el-form-item>
-        <el-form-item label="仓库" v-if="userStore.userInfo?.role === 'ROLE_ADMIN'">
-          <el-select v-model="searchForm.warehouseId" placeholder="请选择仓库" clearable style="width: 150px">
-            <el-option
-              v-for="warehouse in warehouses"
-              :key="warehouse.id"
-              :label="warehouse.name"
-              :value="warehouse.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="仓库" v-else>
-          <el-input
-            :value="getCurrentWarehouseName()"
-            disabled
-            style="width: 150px"
-          />
-        </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="searchForm.businessType" placeholder="请选择类型" clearable style="width: 120px">
-            <el-option label="采购入库" value="PURCHASE_IN" />
-            <el-option label="归还入库" value="RETURN_IN" />
-            <el-option label="调拨入库" value="TRANSFER_IN" />
-            <el-option label="盘盈入库" value="INVENTORY_GAIN" />
-            <el-option label="其他入库" value="OTHER_IN" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="width: 120px">
-            <el-option label="待审批" value="PENDING" />
-            <el-option label="已审批" value="APPROVED" />
-            <el-option label="已执行" value="COMPLETED" />
-            <el-option label="已取消" value="CANCELLED" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="日期">
-          <el-date-picker
-            v-model="searchForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 240px"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>
-            搜索
-          </el-button>
-          <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
+    <!-- 搜索和统计区域 -->
+    <div class="search-section">
+      <div class="search-card">
+        <div class="search-header">
+          <h3>筛选条件</h3>
+          <div class="search-stats">
+            <span class="stat-item">
+              <el-icon><Document /></el-icon>
+              总计：{{ pagination.total }} 个入库单
+            </span>
+            <span class="stat-item">
+              <el-icon><Clock /></el-icon>
+              待审批：{{ pendingCount }} 个
+            </span>
+            <span class="stat-item">
+              <el-icon><CircleCheck /></el-icon>
+              已完成：{{ completedCount }} 个
+            </span>
+          </div>
+        </div>
+        <el-form :model="searchForm" class="search-form" :class="{ 'mobile-form': isMobile }">
+          <div class="form-content">
+            <div class="search-inputs">
+              <el-form-item label="单号" class="search-item">
+                <el-input
+                  v-model="searchForm.orderNumber"
+                  placeholder="请输入入库单号"
+                  clearable
+                  prefix-icon="Search"
+                  class="search-input"
+                />
+              </el-form-item>
+              <el-form-item label="仓库" class="search-item" v-if="userStore.userInfo?.role === 'ROLE_ADMIN'">
+                <el-select v-model="searchForm.warehouseId" placeholder="请选择仓库" clearable class="search-select">
+                  <el-option
+                    v-for="warehouse in warehouses"
+                    :key="warehouse.id"
+                    :label="warehouse.name"
+                    :value="warehouse.id"
+                  >
+                    <el-icon><House /></el-icon>
+                    {{ warehouse.name }}
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="仓库" class="search-item" v-else>
+                <el-input
+                  :value="getCurrentWarehouseName()"
+                  disabled
+                  class="search-input"
+                />
+              </el-form-item>
+              <el-form-item label="类型" class="search-item">
+                <el-select v-model="searchForm.businessType" placeholder="请选择类型" clearable class="search-select">
+                  <el-option label="采购入库" value="PURCHASE_IN">
+                    <el-icon><ShoppingCart /></el-icon>
+                    采购入库
+                  </el-option>
+                  <el-option label="归还入库" value="RETURN_IN">
+                    <el-icon><RefreshLeft /></el-icon>
+                    归还入库
+                  </el-option>
+                  <el-option label="调拨入库" value="TRANSFER_IN">
+                    <el-icon><Switch /></el-icon>
+                    调拨入库
+                  </el-option>
+                  <el-option label="盘盈入库" value="INVENTORY_GAIN">
+                    <el-icon><Plus /></el-icon>
+                    盘盈入库
+                  </el-option>
+                  <el-option label="其他入库" value="OTHER_IN">
+                    <el-icon><More /></el-icon>
+                    其他入库
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="状态" class="search-item">
+                <el-select v-model="searchForm.status" placeholder="请选择状态" clearable class="search-select">
+                  <el-option label="待审批" value="PENDING">
+                    <el-icon><Clock /></el-icon>
+                    待审批
+                  </el-option>
+                  <el-option label="已审批" value="APPROVED">
+                    <el-icon><Select /></el-icon>
+                    已审批
+                  </el-option>
+                  <el-option label="已执行" value="EXECUTED">
+                    <el-icon><CircleCheck /></el-icon>
+                    已执行
+                  </el-option>
+                  <el-option label="已取消" value="CANCELLED">
+                    <el-icon><CircleClose /></el-icon>
+                    已取消
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="日期" class="search-item">
+                <el-date-picker
+                  v-model="searchForm.dateRange"
+                  type="daterange"
+                  range-separator="至"
+                  start-placeholder="开始日期"
+                  end-placeholder="结束日期"
+                  format="YYYY-MM-DD"
+                  value-format="YYYY-MM-DD"
+                  class="search-date"
+                  @change="handleDateChange"
+                />
+              </el-form-item>
+            </div>
+            <div class="search-actions">
+              <el-button type="primary" @click="handleSearch">
+                <el-icon><Search /></el-icon>
+                <span v-if="!isMobile">搜索</span>
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                <span v-if="!isMobile">重置</span>
+              </el-button>
+            </div>
+          </div>
+        </el-form>
+      </div>
     </div>
 
     <!-- 数据表格 -->
-    <div class="data-table">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        border
-        style="width: 100%"
-      >
-        <el-table-column prop="orderNumber" label="入库单号" min-width="140" />
-        <el-table-column prop="warehouseName" label="仓库" min-width="120" />
-        <el-table-column label="入库类型" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getBusinessTypeColor(row.businessType)">
-              {{ getBusinessTypeText(row.businessType) }}
-            </el-tag>
-          </template>
-        </el-table-column>
+    <div class="table-section">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>入库单列表</h3>
+          <div class="table-actions">
+            <el-button size="small" @click="handleRefresh">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
+        </div>
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          stripe
+          class="inbound-table"
+          empty-text="暂无入库单数据"
+          :header-cell-style="{ background: '#f8f9fa', color: '#606266', fontWeight: '600' }"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
+          <el-table-column prop="orderNumber" label="入库单号" min-width="140" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="order-number-cell">
+                <el-icon class="order-icon"><Document /></el-icon>
+                <span class="order-text">{{ row.orderNumber }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="warehouseName" label="仓库" min-width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="warehouse-cell">
+                <el-icon class="warehouse-icon"><House /></el-icon>
+                <span>{{ row.warehouseName }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="入库类型" width="120">
+            <template #default="{ row }">
+              <el-tag :type="getBusinessTypeColor(row.businessType)" size="small">
+                {{ getBusinessTypeText(row.businessType) }}
+              </el-tag>
+            </template>
+          </el-table-column>
 
-        <el-table-column label="总数量" width="100" align="right">
-          <template #default="{ row }">
-            {{ calculateRowTotalQuantity(row) }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="totalAmount" label="总金额" width="120" align="right">
-          <template #default="{ row }">
-            ¥{{ row.totalAmount?.toFixed(2) || '0.00' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusText(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="plannedDate" label="入库时间" min-width="110" />
+          <el-table-column label="总数量" width="100" align="right">
+            <template #default="{ row }">
+              <div class="quantity-cell">
+                <span class="quantity-number">{{ calculateRowTotalQuantity(row) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="totalAmount" label="总金额" width="120" align="right">
+            <template #default="{ row }">
+              <div class="amount-cell">
+                <span class="amount-symbol">¥</span>
+                <span class="amount-number">{{ row.totalAmount?.toFixed(2) || '0.00' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{ row }">
+              <el-tag :type="getStatusType(row.status)" size="small">
+                {{ getStatusText(row.status) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="plannedDate" label="入库时间" min-width="110">
+            <template #default="{ row }">
+              <div class="date-cell">
+                <el-icon class="date-icon"><Calendar /></el-icon>
+                <span>{{ formatDate(row.plannedDate) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdBy" label="制单人" min-width="100">
+            <template #default="{ row }">
+              <div class="creator-cell">
+                <el-icon class="creator-icon"><User /></el-icon>
+                <span>{{ row.createdBy || '-' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdTime" label="创建时间" min-width="160">
+            <template #default="{ row }">
+              <div class="time-cell">
+                <el-icon class="time-icon"><Clock /></el-icon>
+                <span>{{ formatDateTime(row.createdTime) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" :width="isMobile ? 80 : 320" fixed="right" align="center">
+            <template #default="{ row }">
+              <!-- 桌面端按钮组 -->
+              <div class="action-buttons desktop-actions">
+                <el-button type="primary" size="small" @click="handleView(row)" class="action-btn">
+                  <el-icon><View /></el-icon>
+                  查看
+                </el-button>
+                <el-button type="info" size="small" @click="handlePrint(row)" class="action-btn">
+                  <el-icon><Printer /></el-icon>
+                  打印
+                </el-button>
+                <el-button
+                  v-if="row.status === 'PENDING'"
+                  type="warning"
+                  size="small"
+                  @click="handleEdit(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Edit /></el-icon>
+                  编辑
+                </el-button>
+                <el-button
+                  v-if="row.status === 'PENDING' && (userStore.isAdmin || userStore.isWarehouseAdmin)"
+                  type="success"
+                  size="small"
+                  @click="handleApprove(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Check /></el-icon>
+                  审批
+                </el-button>
+                <el-button
+                  v-if="row.status === 'APPROVED' && userStore.isWarehouseAdmin"
+                  type="success"
+                  size="small"
+                  @click="handleExecute(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Position /></el-icon>
+                  执行
+                </el-button>
+                <el-button
+                  v-if="row.status === 'EXECUTED'"
+                  type="success"
+                  size="small"
+                  @click="handleConsistency(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Check /></el-icon>
+                  已执行
+                </el-button>
+                <el-button
+                  v-if="['PENDING', 'APPROVED'].includes(row.status) && (userStore.isAdmin || userStore.isWarehouseAdmin || (userStore.role === 'ROLE_USER' && row.status === 'PENDING'))"
+                  type="danger"
+                  size="small"
+                  @click="handleCancel(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Close /></el-icon>
+                  取消
+                </el-button>
+              </div>
 
-        <el-table-column prop="createdBy" label="制单人" min-width="100" />
-        <el-table-column prop="createdTime" label="创建时间" min-width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createdTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="320" fixed="right">
-          <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleView(row)">
-                <el-icon><View /></el-icon>
-                查看
-              </el-button>
-              <el-button
-                v-if="row.status === 'PENDING'"
-                type="warning"
-                size="small"
-                @click="handleEdit(row)"
-              >
-                <el-icon><Edit /></el-icon>
-                编辑
-              </el-button>
-              <el-button
-                v-if="row.status === 'PENDING' && (userStore.isAdmin || userStore.isWarehouseAdmin)"
-                type="success"
-                size="small"
-                @click="handleApprove(row)"
-              >
-                <el-icon><Check /></el-icon>
-                审批
-              </el-button>
-              <el-button
-                v-if="row.status === 'APPROVED' && userStore.isWarehouseAdmin"
-                type="success"
-                size="small"
-                @click="handleExecute(row)"
-              >
-                <el-icon><Position /></el-icon>
-                执行
-              </el-button>
-              <el-button
-                v-if="row.status === 'EXECUTED'"
-                type="success"
-                size="small"
-                @click="handleConsistency(row)"
-              >
-                <el-icon><Check /></el-icon>
-                已执行
-              </el-button>
-              <el-button
-                v-if="['PENDING', 'APPROVED'].includes(row.status) && (userStore.isAdmin || userStore.isWarehouseAdmin || (userStore.role === 'ROLE_USER' && row.status === 'PENDING'))"
-                type="danger"
-                size="small"
-                @click="handleCancel(row)"
-              >
-                <el-icon><Close /></el-icon>
-                取消
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+              <!-- 移动端下拉菜单 -->
+              <div class="mobile-actions">
+                <el-dropdown trigger="click" @command="(command) => handleMobileAction(command, row)">
+                  <el-button type="primary" size="small">
+                    操作
+                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="view">
+                        <el-icon><View /></el-icon>
+                        查看详情
+                      </el-dropdown-item>
+                      <el-dropdown-item command="print">
+                        <el-icon><Printer /></el-icon>
+                        打印入库单
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="row.status === 'PENDING'"
+                        command="edit"
+                        divided
+                      >
+                        <el-icon><Edit /></el-icon>
+                        编辑入库单
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="row.status === 'PENDING' && (userStore.isAdmin || userStore.isWarehouseAdmin)"
+                        command="approve"
+                      >
+                        <el-icon><Check /></el-icon>
+                        审批入库单
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="row.status === 'APPROVED' && userStore.isWarehouseAdmin"
+                        command="execute"
+                      >
+                        <el-icon><Position /></el-icon>
+                        执行入库
+                      </el-dropdown-item>
+                      <el-dropdown-item
+                        v-if="['PENDING', 'APPROVED'].includes(row.status) && (userStore.isAdmin || userStore.isWarehouseAdmin || (userStore.role === 'ROLE_USER' && row.status === 'PENDING'))"
+                        command="cancel"
+                        divided
+                      >
+                        <el-icon><Close /></el-icon>
+                        取消入库单
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
 
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+        <!-- 分页 -->
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="isMobile ? [5, 10, 20] : [10, 20, 50, 100]"
+            :layout="isMobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'"
+            :small="isMobile"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            class="inbound-pagination"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogTitle"
-      width="1200px"
+      :width="isMobile ? '95%' : '1400px'"
       :close-on-click-modal="false"
-      top="5vh"
+      :fullscreen="isMobile"
+      class="inbound-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="formRules"
-        label-width="100px"
-      >
-        <el-row :gutter="20">
-          <el-col :span="8">
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>{{ dialogTitle }}</h3>
+              <p>{{ form.id ? '修改入库单信息和明细' : '创建新的入库单' }}</p>
+            </div>
+          </div>
+          <el-button type="text" @click="dialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <!-- 基本信息卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>基本信息</span>
+          </div>
+          <el-form
+            ref="formRef"
+            :model="form"
+            :rules="formRules"
+            label-width="100px"
+          >
+        <el-row :gutter="isMobile ? 0 : 20">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="入库单号" prop="orderNumber">
               <el-input v-model="form.orderNumber" placeholder="系统自动生成" disabled />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="仓库" prop="warehouseId">
               <el-select
                 v-model="form.warehouseId"
                 placeholder="请选择仓库"
                 style="width: 100%"
                 :disabled="isWarehouseLocked"
+                popper-class="inbound-warehouse-select"
+                :teleported="false"
+                @focus="console.log('仓库选择器获得焦点，可用仓库:', availableWarehouses)"
+                @visible-change="(visible) => console.log('仓库下拉框显示状态:', visible, '可用仓库数量:', availableWarehouses.length)"
               >
                 <el-option
                   v-for="warehouse in availableWarehouses"
@@ -230,10 +452,19 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="业务类型" prop="businessType">
-              <el-select v-model="form.businessType" placeholder="请选择业务类型" style="width: 100%">
+              <el-select
+                v-model="form.businessType"
+                placeholder="请选择业务类型"
+                style="width: 100%"
+                popper-class="inbound-business-type-select"
+                :teleported="false"
+                @focus="console.log('业务类型选择器获得焦点')"
+                @visible-change="(visible) => console.log('业务类型下拉框显示状态:', visible)"
+              >
                 <el-option label="采购入库" value="PURCHASE_IN" />
+                <el-option label="归还入库" value="RETURN_IN" />
                 <el-option label="调拨入库" value="TRANSFER_IN" />
                 <el-option label="盘盈入库" value="INVENTORY_GAIN" />
                 <el-option label="其他入库" value="OTHER_IN" />
@@ -241,8 +472,8 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
+        <el-row :gutter="isMobile ? 0 : 20">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="入库时间" prop="plannedDate">
               <el-date-picker
                 v-model="form.plannedDate"
@@ -251,17 +482,17 @@
                 format="YYYY-MM-DD"
                 value-format="YYYY-MM-DD"
                 style="width: 100%"
+                :teleported="false"
+                popper-class="inbound-date-picker"
               />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="制单人" prop="createdBy">
               <el-input v-model="form.createdBy" placeholder="请输入制单人" />
             </el-form-item>
           </el-col>
-        </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="参考单号" prop="referenceNumber">
               <el-input v-model="form.referenceNumber" placeholder="请输入参考单号" />
             </el-form-item>
@@ -275,15 +506,24 @@
             placeholder="请输入备注"
           />
         </el-form-item>
+          </el-form>
+        </div>
 
-        <!-- 入库明细 -->
-        <div class="detail-section">
-          <div class="detail-header">
-            <h4>入库明细</h4>
-            <el-button type="primary" size="small" @click="handleAddDetail">
-              <el-icon><Plus /></el-icon>
-              添加明细
-            </el-button>
+        <!-- 入库明细卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><List /></el-icon>
+            <span>入库明细</span>
+          </div>
+          <div class="detail-actions">
+              <el-button type="primary" size="small" @click="handleAddDetail">
+                <el-icon><Plus /></el-icon>
+                添加明细
+              </el-button>
+              <el-button type="success" size="small" @click="handleBatchImport" v-if="form.details.length === 0">
+                <el-icon><Upload /></el-icon>
+                批量导入
+              </el-button>
           </div>
           <el-table :data="form.details" border style="width: 100%">
             <el-table-column type="index" label="序号" width="60" />
@@ -339,10 +579,9 @@
             </el-table-column>
             <el-table-column label="金额" width="120">
               <template #default="{ row }">
-                <span>{{ (row.quantity * row.unitPrice || 0).toFixed(2) }}</span>
+                <span class="amount-text">¥{{ (row.quantity * row.unitPrice || 0).toFixed(2) }}</span>
               </template>
             </el-table-column>
-
             <el-table-column label="操作" width="80">
               <template #default="{ $index }">
                 <el-button
@@ -369,7 +608,7 @@
             </el-row>
           </div>
         </div>
-      </el-form>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
@@ -381,37 +620,134 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      title="入库单详情"
-      width="1000px"
+      :width="isMobile ? '95%' : '1200px'"
+      :fullscreen="isMobile"
+      class="inbound-detail-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <div class="detail-view" v-if="viewData">
-        <!-- 基本信息 -->
-        <el-descriptions title="基本信息" :column="3" border>
-          <el-descriptions-item label="入库单号">{{ viewData.orderNumber }}</el-descriptions-item>
-          <el-descriptions-item label="仓库">{{ viewData.warehouseName }}</el-descriptions-item>
-          <el-descriptions-item label="入库类型">
-            <el-tag :type="getBusinessTypeColor(viewData.businessType)">
-              {{ getBusinessTypeText(viewData.businessType) }}
-            </el-tag>
-          </el-descriptions-item>
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon view-icon">
+              <el-icon><View /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>入库单详情</h3>
+              <p>查看入库单的详细信息</p>
+            </div>
+          </div>
+          <el-button type="text" @click="viewDialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+      <div class="dialog-body">
+        <div class="detail-content" v-if="viewData">
+          <!-- 基本信息卡片 -->
+          <div class="info-card">
+            <div class="card-header">
+              <el-icon><InfoFilled /></el-icon>
+              <span>基本信息</span>
+            </div>
+            <div class="card-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><Postcard /></el-icon>
+                    入库单号
+                  </div>
+                  <div class="info-value">{{ viewData.orderNumber }}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><House /></el-icon>
+                    仓库
+                  </div>
+                  <div class="info-value">{{ viewData.warehouseName }}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><Calendar /></el-icon>
+                    入库时间
+                  </div>
+                  <div class="info-value">{{ viewData.plannedDate }}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><ShoppingCart /></el-icon>
+                    入库类型
+                  </div>
+                  <div class="info-value">
+                    <el-tag :type="getBusinessTypeColor(viewData.businessType)">
+                      {{ getBusinessTypeText(viewData.businessType) }}
+                    </el-tag>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><User /></el-icon>
+                    制单人
+                  </div>
+                  <div class="info-value">{{ viewData.createdBy || '-' }}</div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><Link /></el-icon>
+                    参考单号
+                  </div>
+                  <div class="info-value">{{ viewData.referenceNumber || '-' }}</div>
+                </div>
+                <div class="info-item full-width" v-if="viewData.remark">
+                  <div class="info-label">
+                    <el-icon><Document /></el-icon>
+                    备注
+                  </div>
+                  <div class="info-value">{{ viewData.remark }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <el-descriptions-item label="入库时间">{{ viewData.plannedDate }}</el-descriptions-item>
+          <!-- 状态信息卡片 -->
+          <div class="info-card">
+            <div class="card-header">
+              <el-icon><Setting /></el-icon>
+              <span>状态信息</span>
+            </div>
+            <div class="card-content">
+              <div class="info-grid">
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><Switch /></el-icon>
+                    状态
+                  </div>
+                  <div class="info-value">
+                    <el-tag :type="getStatusType(viewData.status)">
+                      {{ getStatusText(viewData.status) }}
+                    </el-tag>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <div class="info-label">
+                    <el-icon><Clock /></el-icon>
+                    创建时间
+                  </div>
+                  <div class="info-value">{{ formatDateTime(viewData.createdTime) }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <el-descriptions-item label="制单人">{{ viewData.createdBy || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="参考单号">{{ viewData.referenceNumber || '-' }}</el-descriptions-item>
-          <el-descriptions-item label="状态">
-            <el-tag :type="getStatusType(viewData.status)">
-              {{ getStatusText(viewData.status) }}
-            </el-tag>
-          </el-descriptions-item>
-
-          <el-descriptions-item label="备注" :span="3">{{ viewData.remark || '-' }}</el-descriptions-item>
-        </el-descriptions>
-
-        <!-- 明细信息 -->
-        <div class="detail-table" style="margin-top: 20px;">
-          <h4>入库明细</h4>
-          <el-table :data="viewData.details" border>
+          <!-- 明细信息卡片 -->
+          <div class="info-card">
+            <div class="card-header">
+              <el-icon><List /></el-icon>
+              <span>入库明细</span>
+            </div>
+            <div class="card-content">
+              <el-table :data="viewData.details" border>
             <el-table-column type="index" label="序号" width="60" />
             <el-table-column prop="goodsCode" label="货物编码" width="120" />
             <el-table-column prop="goodsName" label="货物名称" min-width="150" />
@@ -433,33 +769,71 @@
               </template>
             </el-table-column>
 
-          </el-table>
+              </el-table>
+            </div>
+          </div>
         </div>
       </div>
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handlePrint(viewData)">
+          <el-icon><Printer /></el-icon>
+          打印入库单
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 审批对话框 -->
     <el-dialog
       v-model="approvalDialogVisible"
-      title="审批入库单"
-      width="500px"
+      :width="isMobile ? '95%' : '700px'"
+      :fullscreen="isMobile"
+      class="approval-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <el-form :model="approvalForm" label-width="100px">
-        <el-form-item label="审批结果">
-          <el-radio-group v-model="approvalForm.status">
-            <el-radio label="APPROVED">通过</el-radio>
-            <el-radio label="REJECTED">拒绝</el-radio>
-          </el-radio-group>
-        </el-form-item>
-        <el-form-item label="审批意见">
-          <el-input
-            v-model="approvalForm.approvalRemark"
-            type="textarea"
-            :rows="4"
-            placeholder="请输入审批意见"
-          />
-        </el-form-item>
-      </el-form>
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Check /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>审批入库单</h3>
+              <p>审核入库单信息并做出决定</p>
+            </div>
+          </div>
+          <el-button type="text" @click="approvalDialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><DocumentChecked /></el-icon>
+            <span>审批信息</span>
+          </div>
+          <el-form :model="approvalForm" label-width="100px">
+            <el-form-item label="审批结果">
+              <el-radio-group v-model="approvalForm.status">
+                <el-radio label="APPROVED">通过</el-radio>
+                <el-radio label="REJECTED">拒绝</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="审批意见">
+              <el-input
+                v-model="approvalForm.approvalRemark"
+                type="textarea"
+                :rows="4"
+                placeholder="请输入审批意见"
+              />
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
       <template #footer>
         <el-button @click="approvalDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitApproval" :loading="approvalLoading">
@@ -471,12 +845,39 @@
     <!-- 货物选择弹出框 -->
     <el-dialog
       v-model="goodsSelectorVisible"
-      title="选择货物"
-      width="80%"
+      :width="isMobile ? '95%' : '90%'"
       :close-on-click-modal="false"
+      :fullscreen="isMobile"
+      class="goods-selector-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <!-- 筛选条件 -->
-      <div class="goods-filter">
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Search /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>选择货物</h3>
+              <p>从货物列表中选择要入库的商品</p>
+            </div>
+          </div>
+          <el-button type="text" @click="goodsSelectorVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <!-- 筛选条件卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><Filter /></el-icon>
+            <span>筛选条件</span>
+          </div>
+          <div class="goods-filter">
         <el-form :model="goodsFilter" inline>
           <el-form-item label="货物编码">
             <el-input v-model="goodsFilter.code" placeholder="请输入货物编码" clearable style="width: 150px" />
@@ -491,11 +892,17 @@
             <el-button type="primary" @click="filterGoods">筛选</el-button>
             <el-button @click="resetGoodsFilter">重置</el-button>
           </el-form-item>
-        </el-form>
-      </div>
+          </el-form>
+          </div>
+        </div>
 
-      <!-- 货物列表 -->
-      <el-table
+        <!-- 货物列表卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><List /></el-icon>
+            <span>货物列表</span>
+          </div>
+          <el-table
         ref="goodsTableRef"
         :data="filteredGoodsList"
         border
@@ -511,8 +918,10 @@
             {{ getSpecificationModel(row) }}
           </template>
         </el-table-column>
-        <el-table-column prop="unit" label="单位" width="80" />
-      </el-table>
+          <el-table-column prop="unit" label="单位" width="80" />
+        </el-table>
+        </div>
+      </div>
 
       <template #footer>
         <div class="dialog-footer">
@@ -524,17 +933,30 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 打印预览 -->
+    <PrintPreview
+      v-model="printPreviewVisible"
+      :content="printContent"
+      :title="printTitle"
+      @print="handlePrintComplete"
+      @close="handlePrintPreviewClose"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Plus } from '@element-plus/icons-vue'
+import { Search, Plus, ArrowDown, View, Edit, Check, Position, Close, Delete, Refresh, Download, Upload, Calendar, Clock, User, Document, CircleCheck, House, ShoppingCart, RefreshLeft, Switch, More, CircleClose, Printer } from '@element-plus/icons-vue'
 import { request } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
 import { useDeviceDetection, mobileOptimizations } from '@/utils/responsive'
+import { printHtml, generateInboundPrintContent } from '@/utils/print'
+import PrintPreview from '@/components/PrintPreview.vue'
+import InboundLedgerPrint from '@/components/InboundLedgerPrint.vue'
+import InboundExport from '@/components/InboundExport.vue'
 
 // 响应式检测
 const { isMobile, isTablet, isDesktop } = useDeviceDetection()
@@ -548,6 +970,7 @@ const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const approvalDialogVisible = ref(false)
 const tableData = ref([])
+const selectedRows = ref([])
 const viewData = ref(null)
 const currentRow = ref(null)
 const warehouses = ref([])
@@ -561,6 +984,11 @@ const goodsSelectorVisible = ref(false)
 const goodsTableRef = ref()
 const selectedGoods = ref([])
 const currentDetailIndex = ref(-1)
+
+// 打印预览相关
+const printPreviewVisible = ref(false)
+const printContent = ref('')
+const printTitle = ref('')
 const goodsFilter = reactive({
   code: '',
   name: '',
@@ -648,6 +1076,15 @@ const availableWarehouses = computed(() => {
   }
   // 其他角色只能看到分配给他们的仓库
   return userStore.warehouses || []
+})
+
+// 统计数据计算属性
+const pendingCount = computed(() => {
+  return tableData.value.filter(item => item.status === 'PENDING').length
+})
+
+const completedCount = computed(() => {
+  return tableData.value.filter(item => item.status === 'EXECUTED').length
 })
 
 // 方法
@@ -776,9 +1213,18 @@ const loadData = async () => {
 
 const loadWarehouses = async () => {
   try {
+    console.log('开始加载仓库数据...')
     const response = await request.get('/warehouses/enabled')
+    console.log('仓库数据响应:', response)
     if (response.success) {
       warehouses.value = response.data || []
+      console.log('仓库数据加载成功:', warehouses.value)
+    } else {
+      console.error('仓库数据加载失败:', response.message)
+      warehouses.value = [
+        { id: 1, name: '主仓库' },
+        { id: 2, name: '分仓库A' }
+      ]
     }
   } catch (error) {
     console.error('加载仓库数据失败:', error)
@@ -856,6 +1302,11 @@ const resetGoodsFilter = () => {
   filteredGoodsList.value = goodsList.value
 }
 
+// 处理表格行选择变化
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
 // 处理货物选择变化
 const handleGoodsSelectionChange = (selection) => {
   selectedGoods.value = selection
@@ -908,6 +1359,12 @@ const handleSearch = () => {
   loadData()
 }
 
+const handleDateChange = () => {
+  // 日期变化时自动搜索
+  pagination.page = 1
+  loadData()
+}
+
 const handleReset = () => {
   Object.assign(searchForm, {
     orderNumber: '',
@@ -933,6 +1390,13 @@ const handleCurrentChange = (page) => {
 
 const handleAdd = async () => {
   resetForm()
+
+  // 强制重新加载仓库数据
+  console.log('新增入库单 - 开始加载仓库数据')
+  await loadWarehouses()
+  console.log('新增入库单 - 仓库数据加载完成，当前仓库列表:', warehouses.value)
+  console.log('新增入库单 - 可用仓库列表:', availableWarehouses.value)
+
   try {
     const response = await request.get('/inbound-orders/generate-order-number')
     if (response.success) {
@@ -946,6 +1410,11 @@ const handleAdd = async () => {
   const currentUser = userStore.user
   if (currentUser) {
     form.createdBy = currentUser.realName || currentUser.username
+  }
+
+  // 为非管理员用户设置默认仓库
+  if (!userStore.isAdmin && userStore.warehouses && userStore.warehouses.length > 0) {
+    form.warehouseId = userStore.warehouses[0].id
   }
 
   dialogVisible.value = true
@@ -1070,10 +1539,100 @@ const handleAddDetail = () => {
   filteredGoodsList.value = goodsList.value
   selectedGoods.value = []
   resetGoodsFilter()
+
+  // 确保清除表格选中状态
+  nextTick(() => {
+    if (goodsTableRef.value) {
+      goodsTableRef.value.clearSelection()
+    }
+  })
+}
+
+// 批量导入功能
+const handleBatchImport = () => {
+  ElMessage.info('批量导入功能开发中，敬请期待！')
+  // TODO: 实现Excel批量导入功能
+}
+
+
+
+// 刷新功能
+const handleRefresh = () => {
+  loadData()
+}
+
+// 打印功能
+const handlePrint = async (row) => {
+  try {
+    // 如果传入的是行数据，需要获取完整的详情数据
+    let printData = row
+    if (!row.details || row.details.length === 0) {
+      // 获取完整的入库单详情
+      const response = await request.get(`/inbound-orders/${row.id}`)
+      if (response.success) {
+        printData = response.data
+      } else {
+        ElMessage.error('获取入库单详情失败')
+        return
+      }
+    }
+
+    // 生成打印内容
+    printContent.value = generateInboundPrintContent(printData)
+    printTitle.value = `入库单-${printData.orderNumber}`
+
+    // 显示打印预览
+    printPreviewVisible.value = true
+  } catch (error) {
+    console.error('打印失败:', error)
+    ElMessage.error('获取打印数据失败，请重试')
+  }
+}
+
+// 打印完成回调
+const handlePrintComplete = () => {
+  printPreviewVisible.value = false
+}
+
+// 打印预览关闭回调
+const handlePrintPreviewClose = () => {
+  printContent.value = ''
+  printTitle.value = ''
+}
+
+// 移动端操作处理
+const handleMobileAction = (command, row) => {
+  switch (command) {
+    case 'view':
+      handleView(row)
+      break
+    case 'print':
+      handlePrint(row)
+      break
+    case 'edit':
+      handleEdit(row)
+      break
+    case 'approve':
+      handleApprove(row)
+      break
+    case 'execute':
+      handleExecute(row)
+      break
+    case 'cancel':
+      handleCancel(row)
+      break
+    default:
+      break
+  }
 }
 
 const handleRemoveDetail = (index) => {
   form.details.splice(index, 1)
+  // 清除货物选择表格的选中状态，避免下次打开时显示错误的选中状态
+  if (goodsTableRef.value) {
+    goodsTableRef.value.clearSelection()
+  }
+  selectedGoods.value = []
 }
 
 const handleGoodsChange = (row, index) => {
@@ -1136,143 +1695,801 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.text-success {
-  color: #67c23a;
-}
+.inbound-management {
+  padding: 20px;
+  background: #f5f7fa;
+  min-height: calc(100vh - 60px);
 
-.text-primary {
-  color: #409eff;
-}
+  // 页面头部样式
+  .page-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.15);
 
-.text-danger {
-  color: #f56c6c;
-}
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 40px; // 增加左右两边的间距
 
-// 货物选择样式
-.goods-option {
-  padding: 8px 0;
+      .header-left {
+        flex: 1; // 让左侧内容占据剩余空间
+        min-width: 0; // 防止内容溢出
 
-  .goods-main {
-    display: flex;
-    align-items: center;
-    margin-bottom: 4px;
+        .page-title {
+          display: flex;
+          align-items: center;
+          margin: 0 0 8px 0;
+          font-size: 28px;
+          font-weight: 600;
+          color: white;
 
-    .goods-code {
-      background: #f0f2f5;
-      color: #606266;
-      padding: 2px 6px;
-      border-radius: 3px;
+          .title-icon {
+            margin-right: 12px;
+            font-size: 32px;
+          }
+        }
+
+        .page-subtitle {
+          margin: 0;
+          color: rgba(255, 255, 255, 0.8);
+          font-size: 14px;
+          line-height: 1.4;
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        flex-shrink: 0; // 防止按钮被压缩
+
+        &.mobile-actions {
+          // 移动端样式将在媒体查询中覆盖
+          flex-direction: row;
+          gap: 12px;
+        }
+      }
+    }
+  }
+
+  // 搜索区域样式
+  .search-section {
+    margin-bottom: 20px;
+
+    .search-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+      .search-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid #f0f2f5;
+
+        h3 {
+          margin: 0;
+          color: #303133;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .search-stats {
+          display: flex;
+          gap: 24px;
+
+          .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #606266;
+            font-size: 14px;
+
+            .el-icon {
+              color: #409eff;
+            }
+          }
+        }
+      }
+
+      .search-form {
+        .form-content {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+
+          .search-inputs {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+
+            .search-item {
+              margin-bottom: 0;
+
+              .search-input,
+              .search-select {
+                width: 200px;
+              }
+
+              .search-date {
+                width: 240px;
+              }
+            }
+          }
+
+          .search-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 16px;
+            flex-shrink: 0;
+          }
+        }
+
+        &.mobile-form {
+          .form-content {
+            flex-direction: column;
+            gap: 16px;
+
+            .search-inputs {
+              width: 100%;
+              justify-content: space-between;
+
+              .search-item {
+                flex: 1;
+                min-width: 200px;
+
+                .search-input,
+                .search-select,
+                .search-date {
+                  width: 100%;
+                }
+              }
+            }
+
+            .search-actions {
+              width: 100%;
+              margin-left: 0;
+              justify-content: center;
+
+              .el-button {
+                flex: 1;
+                max-width: 120px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 表格区域样式
+  .table-section {
+    .table-card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+
+      .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f2f5;
+
+        h3 {
+          margin: 0;
+          color: #303133;
+          font-size: 16px;
+          font-weight: 600;
+        }
+
+        .table-actions {
+          display: flex;
+          gap: 8px;
+        }
+      }
+
+      .inbound-table {
+        .order-number-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .order-icon {
+            color: #409eff;
+            font-size: 16px;
+          }
+
+          .order-text {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-weight: 500;
+          }
+        }
+
+        .warehouse-cell {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+
+          .warehouse-icon {
+            color: #67c23a;
+            font-size: 16px;
+          }
+        }
+
+        .date-cell {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .date-icon {
+            color: #e6a23c;
+            font-size: 14px;
+          }
+        }
+
+        .quantity-cell {
+          .quantity-number {
+            font-weight: 600;
+            color: #303133;
+          }
+        }
+
+        .amount-cell {
+          .amount-symbol {
+            color: #909399;
+            margin-right: 2px;
+          }
+
+          .amount-number {
+            font-weight: 600;
+            color: #f56c6c;
+          }
+        }
+
+        .creator-cell {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .creator-icon {
+            color: #909399;
+            font-size: 14px;
+          }
+        }
+
+        .time-cell {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+
+          .time-icon {
+            color: #909399;
+            font-size: 14px;
+          }
+        }
+
+        .action-buttons {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          justify-content: center;
+
+          &.desktop-actions {
+            .action-btn {
+              margin: 0;
+              padding: 6px 12px;
+              font-size: 12px;
+              border-radius: 4px;
+
+              .el-icon {
+                margin-right: 4px;
+              }
+            }
+          }
+        }
+
+        .mobile-actions {
+          display: none;
+        }
+
+        .desktop-actions {
+          display: flex;
+        }
+      }
+
+      .pagination-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 24px;
+        padding: 20px 24px;
+        background: #fafbfc;
+        border-radius: 8px;
+
+        .inbound-pagination {
+          :deep(.el-pagination) {
+            justify-content: center;
+          }
+
+          .el-pagination__total {
+            margin-right: auto;
+          }
+        }
+      }
+    }
+  }
+
+  // 货物选择样式
+  .goods-option {
+    padding: 8px 0;
+
+    .goods-main {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
+
+      .goods-code {
+        background: #f0f2f5;
+        color: #606266;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 12px;
+        margin-right: 8px;
+        font-family: monospace;
+      }
+
+      .goods-name {
+        font-weight: 500;
+        color: #303133;
+      }
+    }
+
+    .goods-detail {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
       font-size: 12px;
-      margin-right: 8px;
-      font-family: monospace;
-    }
+      color: #909399;
 
-    .goods-name {
-      font-weight: 500;
-      color: #303133;
+      span {
+        background: #f8f9fa;
+        padding: 1px 4px;
+        border-radius: 2px;
+      }
+
+      .goods-price {
+        color: #e6a23c;
+        font-weight: 500;
+      }
     }
   }
 
-  .goods-detail {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    font-size: 12px;
-    color: #909399;
+  // 明细区域样式
+  .detail-section {
+    margin-top: 20px;
 
-    span {
+    .detail-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+
+      h4 {
+        margin: 0;
+        color: #303133;
+        font-size: 16px;
+        font-weight: 600;
+      }
+
+      .detail-actions {
+        display: flex;
+        gap: 8px;
+      }
+    }
+
+    .total-info {
+      margin-top: 16px;
+      padding: 15px;
       background: #f8f9fa;
-      padding: 1px 4px;
-      border-radius: 2px;
+      border-radius: 6px;
+      border: 1px solid #e4e7ed;
+
+      span {
+        font-weight: 600;
+        color: #303133;
+      }
     }
 
-    .goods-price {
-      color: #e6a23c;
-      font-weight: 500;
+    .amount-text {
+      color: #f56c6c;
+      font-weight: 600;
     }
   }
-}
 
-.detail-section {
-  margin-top: 20px;
-  
-  .detail-header {
+  // 详情查看样式
+  .detail-view {
+    .detail-table {
+      h4 {
+        margin: 0 0 16px 0;
+        font-size: 16px;
+        font-weight: 600;
+      }
+    }
+  }
+
+  // 货物选择弹出框样式
+  .goods-filter {
+    margin-bottom: 20px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 6px;
+  }
+
+  .dialog-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
-    
-    h4 {
+
+    .selected-info {
+      color: #606266;
+      font-size: 14px;
+    }
+  }
+
+  // 工具样式
+  .cursor-pointer {
+    cursor: pointer;
+  }
+
+  .text-success {
+    color: #67c23a;
+  }
+
+  .text-primary {
+    color: #409eff;
+  }
+
+  .text-danger {
+    color: #f56c6c;
+  }
+
+  // 操作按钮样式
+  .action-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+
+    .el-button {
       margin: 0;
-      font-size: 16px;
-      font-weight: 600;
-    }
-  }
-  
-  .total-info {
-    margin-top: 16px;
-    padding: 12px;
-    background: #f8f9fa;
-    border-radius: 4px;
-    font-weight: 600;
-  }
-}
+      padding: 6px 12px;
+      font-size: 12px;
+      border-radius: 4px;
 
-.detail-view {
-  .detail-table {
-    h4 {
-      margin: 0 0 16px 0;
-      font-size: 16px;
-      font-weight: 600;
+      .el-icon {
+        margin-right: 4px;
+      }
     }
   }
 }
 
-// 货物选择弹出框样式
-.goods-filter {
-  margin-bottom: 20px;
-  padding: 16px;
-  background: #f8f9fa;
-  border-radius: 6px;
-}
-
-.dialog-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .selected-info {
-    color: #606266;
-    font-size: 14px;
+// 现代化弹窗样式
+.modern-dialog {
+  :deep(.el-dialog) {
+    z-index: 3000 !important;
   }
-}
 
-.cursor-pointer {
-  cursor: pointer;
-}
+  :deep(.el-overlay) {
+    z-index: 2999 !important;
+  }
 
-// 操作按钮样式
-.action-buttons {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  .el-dialog__header {
+    padding: 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
 
-  .el-button {
-    margin: 0;
-    padding: 6px 12px;
-    font-size: 12px;
-    border-radius: 4px;
+  .el-dialog__body {
+    padding: 0;
+  }
 
-    .el-icon {
-      margin-right: 4px;
+  .el-dialog__footer {
+    padding: 0;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  // 弹窗头部
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+
+        &.view-icon {
+          background: rgba(255, 255, 255, 0.15);
+        }
+
+        .el-icon {
+          font-size: 24px;
+        }
+      }
+
+      .header-text {
+        h3 {
+          margin: 0 0 4px 0;
+          font-size: 20px;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          opacity: 0.8;
+        }
+      }
+    }
+
+    .close-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      transition: all 0.3s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+      }
+
+      .el-icon {
+        font-size: 18px;
+      }
+    }
+  }
+
+  // 弹窗主体
+  .dialog-body {
+    padding: 32px;
+    background: #fafbfc;
+    min-height: 400px;
+
+    // 表单分组样式
+    .form-section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e6e8eb;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+
+        .el-icon {
+          font-size: 18px;
+          color: #667eea;
+        }
+      }
+
+      .el-form-item {
+        margin-bottom: 20px;
+
+        .el-form-item__label {
+          font-weight: 500;
+          color: #606266;
+        }
+
+        .el-input, .el-select, .el-textarea {
+          .el-input__wrapper,
+          .el-select__wrapper,
+          .el-textarea__inner {
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+
+            &:hover {
+              box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+            }
+
+            &.is-focus {
+              box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+          }
+        }
+      }
+
+      .detail-actions {
+        display: flex;
+        gap: 12px;
+        margin-bottom: 16px;
+
+        .el-button {
+          border-radius: 8px;
+          font-weight: 500;
+        }
+      }
+
+      .total-info {
+        margin-top: 16px;
+        padding: 16px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        font-weight: 600;
+        color: #303133;
+      }
+    }
+
+    // 详情卡片样式
+    .info-card {
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e6e8eb;
+      overflow: hidden;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 24px;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e6e8eb;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+
+        .el-icon {
+          font-size: 18px;
+          color: #667eea;
+        }
+      }
+
+      .card-content {
+        padding: 24px;
+
+        .info-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 20px;
+
+          .info-item {
+            &.full-width {
+              grid-column: 1 / -1;
+            }
+
+            .info-label {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              font-size: 14px;
+              color: #909399;
+              margin-bottom: 8px;
+
+              .el-icon {
+                font-size: 16px;
+              }
+            }
+
+            .info-value {
+              font-size: 15px;
+              color: #303133;
+              font-weight: 500;
+              word-break: break-all;
+
+              .el-tag {
+                .el-icon {
+                  margin-right: 4px;
+                }
+              }
+            }
+          }
+        }
+
+        .el-table {
+          border-radius: 8px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+
+          .el-table__header {
+            background: #f8f9fa;
+
+            th {
+              background: #f8f9fa !important;
+              color: #2c3e50;
+              font-weight: 600;
+              border-bottom: 2px solid #e9ecef;
+            }
+          }
+
+          .el-table__body {
+            tr:hover {
+              background: #f0f7ff !important;
+            }
+          }
+        }
+      }
     }
   }
 }
 
 /* 移动端响应式样式 */
 @media (max-width: 768px) {
-  .inbound-container {
+  .inbound-management {
     padding: 15px;
+
+    // 移动端页面头部优化
+    .page-header {
+      .header-content {
+        gap: 20px; // 移动端减少间距
+        flex-direction: column;
+        text-align: center;
+
+        .header-left {
+          .page-title {
+            font-size: 24px;
+            justify-content: center;
+          }
+
+          .page-subtitle {
+            text-align: center;
+          }
+        }
+
+        .header-actions {
+          width: 100%;
+          justify-content: center;
+          flex-direction: row !important; // 强制保持水平排列
+          gap: 12px;
+
+          .el-button {
+            flex: 1; // 让按钮等宽
+            max-width: 120px; // 限制最大宽度
+            min-width: 100px; // 设置最小宽度
+          }
+        }
+      }
+    }
 
     .search-section {
       .search-form {
@@ -1289,13 +2506,17 @@ onMounted(() => {
           }
         }
       }
+    }
 
-      .search-actions {
-        flex-direction: column;
-        gap: 10px;
+    // 移动端操作栏优化
+    .table-section {
+      .inbound-table {
+        .desktop-actions {
+          display: none !important;
+        }
 
-        .el-button {
-          width: 100%;
+        .mobile-actions {
+          display: block !important;
         }
       }
     }
@@ -1322,48 +2543,219 @@ onMounted(() => {
         }
       }
 
-      .pagination-wrapper {
-        .el-pagination {
-          justify-content: center;
+      .pagination-container {
+        padding: 16px;
 
+        .inbound-pagination {
           .el-pagination__sizes,
+          .el-pagination__total,
           .el-pagination__jump {
             display: none;
           }
         }
       }
     }
-  }
 
-  // 对话框移动端优化
-  .el-dialog {
-    width: 95% !important;
-    margin: 5vh auto !important;
+    // 弹窗移动端适配
+    .modern-dialog {
+      .dialog-header {
+        padding: 16px 20px;
 
-    .el-dialog__body {
-      padding: 15px;
+        .header-content {
+          gap: 12px;
 
-      .el-form {
-        .el-form-item {
-          margin-bottom: 15px;
+          .header-icon {
+            width: 40px;
+            height: 40px;
 
-          .el-form-item__label {
-            width: auto !important;
-            margin-bottom: 5px;
-            text-align: left !important;
+            .el-icon {
+              font-size: 20px;
+            }
           }
 
-          .el-form-item__content {
-            margin-left: 0 !important;
+          .header-text {
+            h3 {
+              font-size: 18px;
+            }
+
+            p {
+              font-size: 13px;
+            }
+          }
+        }
+
+        .close-btn {
+          width: 36px;
+          height: 36px;
+        }
+      }
+
+      .dialog-body {
+        padding: 16px;
+
+        .info-card {
+          padding: 16px;
+          margin-bottom: 16px;
+
+          .card-header {
+            font-size: 14px;
+            padding: 12px 0;
+          }
+
+          .card-content {
+            padding: 16px 0 0 0;
+
+            .info-grid {
+              grid-template-columns: 1fr;
+              gap: 16px;
+
+              .info-item {
+                &.full-width {
+                  grid-column: 1;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+
+    .inbound-dialog,
+    .inbound-detail-dialog,
+    .approval-dialog,
+    .goods-selector-dialog {
+      .el-dialog__body {
+        padding: 16px;
+
+        .el-form {
+          .el-form-item {
+            margin-bottom: 16px;
+
+            .el-form-item__label {
+              width: auto !important;
+              margin-bottom: 6px;
+              text-align: left !important;
+              font-size: 14px;
+            }
+
+            .el-form-item__content {
+              margin-left: 0 !important;
+            }
+
+            .el-input,
+            .el-select,
+            .el-date-picker,
+            .el-textarea {
+              width: 100%;
+            }
+          }
+        }
+
+        .el-table {
+          font-size: 12px;
+
+          .el-table__cell {
+            padding: 8px 4px;
+          }
+
+          .el-table__header {
+            th {
+              font-size: 12px;
+              padding: 8px 4px;
+            }
+          }
+        }
+
+        .detail-actions {
+          .el-button {
+            padding: 6px 12px;
+            font-size: 12px;
+            margin: 0 4px;
           }
         }
       }
 
-      .el-table {
-        font-size: 12px;
+      .el-dialog__footer {
+        padding: 16px;
+        text-align: center;
 
-        .el-table__cell {
-          padding: 6px 4px;
+        .el-button {
+          margin: 0 6px;
+          min-width: 80px;
+          padding: 8px 16px;
+          font-size: 14px;
+        }
+      }
+    }
+
+    // 货物选择器特殊适配
+    .goods-selector-dialog {
+      .el-dialog__body {
+        .goods-search {
+          .el-form-item {
+            margin-bottom: 12px;
+          }
+        }
+
+        .pagination-container {
+          padding: 12px;
+
+          .el-pagination {
+            .el-pagination__sizes,
+            .el-pagination__total,
+            .el-pagination__jump {
+              display: none;
+            }
+          }
+        }
+      }
+    }
+  }
+
+
+
+}
+
+/* 平板端优化 */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .inbound-management {
+    .page-header {
+      .header-content {
+        gap: 30px; // 平板端适中间距
+
+        .header-left {
+          .page-title {
+            font-size: 26px;
+          }
+        }
+      }
+    }
+
+    // 平板端弹窗优化
+    .inbound-dialog,
+    .inbound-detail-dialog,
+    .approval-dialog,
+    .goods-selector-dialog {
+      .el-dialog__body {
+        .el-form {
+          .el-form-item {
+            .el-form-item__label {
+              width: 120px !important;
+              text-align: right !important;
+            }
+
+            .el-form-item__content {
+              margin-left: 130px !important;
+            }
+          }
+        }
+
+        .el-table {
+          font-size: 13px;
+
+          .el-table__cell {
+            padding: 10px 6px;
+          }
         }
       }
     }
@@ -1372,8 +2764,122 @@ onMounted(() => {
 
 /* 小屏手机优化 */
 @media (max-width: 480px) {
-  .inbound-container {
+  .inbound-management {
+    // 超小屏弹窗优化
+    .inbound-dialog,
+    .inbound-detail-dialog,
+    .approval-dialog,
+    .goods-selector-dialog {
+      .el-dialog__body {
+        padding: 12px;
+
+        .el-form {
+          .el-form-item {
+            margin-bottom: 12px;
+
+            .el-form-item__label {
+              font-size: 12px;
+              margin-bottom: 4px;
+            }
+
+            .el-input,
+            .el-select,
+            .el-date-picker,
+            .el-textarea {
+              font-size: 14px;
+            }
+          }
+        }
+
+        .el-table {
+          font-size: 11px;
+
+          .el-table__cell {
+            padding: 6px 2px;
+          }
+
+          .el-table__header {
+            th {
+              font-size: 11px;
+              padding: 6px 2px;
+            }
+          }
+        }
+
+        .detail-actions {
+          .el-button {
+            padding: 4px 8px;
+            font-size: 11px;
+            min-width: 60px;
+            margin: 0 2px;
+          }
+        }
+      }
+
+      .el-dialog__footer {
+        padding: 12px;
+
+        .el-button {
+          margin: 0 4px;
+          min-width: 70px;
+          padding: 6px 12px;
+          font-size: 12px;
+        }
+      }
+    }
+
+    // 货物选择器超小屏优化
+    .goods-selector-dialog {
+      .el-dialog__body {
+        .goods-search {
+          .el-form-item {
+            margin-bottom: 8px;
+          }
+        }
+
+        .pagination-container {
+          padding: 8px;
+
+          .el-pagination {
+            .el-pager li {
+              min-width: 24px;
+              height: 24px;
+              line-height: 24px;
+              font-size: 10px;
+            }
+
+            .btn-prev,
+            .btn-next {
+              min-width: 24px;
+              height: 24px;
+              line-height: 24px;
+              font-size: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* 小屏手机优化 */
+@media (max-width: 480px) {
+  .inbound-management {
     padding: 10px;
+
+    // 超小屏幕按钮优化
+    .page-header {
+      .header-content {
+        .header-actions {
+          .el-button {
+            min-width: 90px; // 减小最小宽度
+            max-width: 110px; // 减小最大宽度
+            font-size: 13px; // 稍微减小字体
+            padding: 8px 12px; // 调整内边距
+          }
+        }
+      }
+    }
 
     .search-section {
       .search-form {
@@ -1413,5 +2919,117 @@ onMounted(() => {
       padding: 10px;
     }
   }
+
+  // 分页小屏适配
+  .pagination-container {
+    padding: 12px;
+
+    .inbound-pagination {
+      .el-pager li {
+        min-width: 28px;
+        height: 28px;
+        line-height: 28px;
+        font-size: 12px;
+      }
+
+      .btn-prev,
+      .btn-next {
+        min-width: 28px;
+        height: 28px;
+        line-height: 28px;
+        font-size: 12px;
+      }
+    }
+  }
+}
+
+/* 日期选择器样式修复 */
+.inbound-date-picker {
+  z-index: 4000 !important;
+}
+
+/* 确保弹窗内的日期选择器正常显示 */
+.modern-dialog .el-date-editor {
+  width: 100%;
+}
+
+.modern-dialog .el-date-editor .el-input__inner {
+  cursor: pointer;
+}
+
+/* 仓库和业务类型选择器样式修复 */
+.inbound-warehouse-select,
+.inbound-business-type-select {
+  z-index: 4000 !important;
+  max-height: 300px !important;
+  overflow-y: auto !important;
+}
+
+/* 确保弹窗内的选择器正常显示 */
+.modern-dialog .el-select {
+  width: 100%;
+}
+
+.modern-dialog .el-select .el-input__inner {
+  cursor: pointer;
+}
+
+/* 强制确保下拉选项可见 */
+.el-select-dropdown {
+  z-index: 4000 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.el-select-dropdown .el-select-dropdown__item {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  line-height: normal !important;
+  padding: 8px 12px !important;
+  color: #606266 !important;
+  background-color: #fff !important;
+}
+
+.el-select-dropdown .el-select-dropdown__item:hover {
+  background-color: #f5f7fa !important;
+}
+
+.el-popper {
+  z-index: 4000 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+/* 特别针对入库弹窗内的选择器 */
+.inbound-dialog .el-select-dropdown {
+  z-index: 4000 !important;
+  position: fixed !important;
+}
+
+.inbound-dialog .el-select-dropdown .el-select-dropdown__list {
+  padding: 4px 0 !important;
+}
+
+.inbound-dialog .el-select-dropdown .el-select-dropdown__item {
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+  color: #606266 !important;
+  background-color: #fff !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.inbound-dialog .el-select-dropdown .el-select-dropdown__item.is-selected {
+  color: #409eff !important;
+  background-color: #f0f9ff !important;
+  font-weight: 500 !important;
+}
+
+.inbound-dialog .el-select-dropdown .el-select-dropdown__item:hover {
+  background-color: #f5f7fa !important;
 }
 </style>

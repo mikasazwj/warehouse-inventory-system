@@ -14,8 +14,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "inventory_check_details", indexes = {
     @Index(name = "idx_check_detail_order", columnList = "check_order_id"),
-    @Index(name = "idx_check_detail_goods", columnList = "goods_id"),
-    @Index(name = "idx_check_detail_batch", columnList = "batch_number")
+    @Index(name = "idx_check_detail_goods", columnList = "goods_id")
 })
 public class InventoryCheckDetail extends BaseEntity {
 
@@ -48,11 +47,7 @@ public class InventoryCheckDetail extends BaseEntity {
     @Column(name = "difference_amount", precision = 15, scale = 2)
     private BigDecimal differenceAmount = BigDecimal.ZERO;
 
-    @Column(name = "batch_number", length = 100)
-    private String batchNumber;
 
-    @Column(name = "location", length = 100)
-    private String location;
 
     @Column(name = "checked", nullable = false)
     private Boolean checked = false;
@@ -145,21 +140,7 @@ public class InventoryCheckDetail extends BaseEntity {
         this.differenceAmount = differenceAmount;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
 
     public Boolean getChecked() {
         return checked;
@@ -229,12 +210,7 @@ public class InventoryCheckDetail extends BaseEntity {
         return checked != null && checked;
     }
 
-    /**
-     * 判断是否有批次号
-     */
-    public boolean hasBatchNumber() {
-        return batchNumber != null && !batchNumber.trim().isEmpty();
-    }
+
 
     /**
      * 判断是否盘盈

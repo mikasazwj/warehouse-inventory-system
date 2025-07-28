@@ -32,12 +32,6 @@ public class StocktakeOrderRange extends BaseEntity {
     @Column(name = "book_quantity", precision = 15, scale = 3)
     private BigDecimal bookQuantity = BigDecimal.ZERO;
 
-    @Column(name = "location", length = 100)
-    private String location;
-
-    @Column(name = "batch_number", length = 100)
-    private String batchNumber;
-
     @Column(name = "remark", length = 500)
     private String remark;
 }

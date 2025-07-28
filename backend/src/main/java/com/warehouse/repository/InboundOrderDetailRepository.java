@@ -32,10 +32,7 @@ public interface InboundOrderDetailRepository extends JpaRepository<InboundOrder
      */
     List<InboundOrderDetail> findByGoodsId(Long goodsId);
 
-    /**
-     * 根据批次号查找明细
-     */
-    List<InboundOrderDetail> findByBatchNumberContaining(String batchNumber);
+
 
     /**
      * 根据入库单ID删除明细

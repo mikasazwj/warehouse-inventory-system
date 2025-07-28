@@ -26,10 +26,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      */
     Optional<Inventory> findByWarehouseIdAndGoodsIdAndDeletedFalse(Long warehouseId, Long goodsId);
 
-    /**
-     * 根据仓库和货物和批次查找库存
-     */
-    Optional<Inventory> findByWarehouseIdAndGoodsIdAndBatchNumberAndDeletedFalse(Long warehouseId, Long goodsId, String batchNumber);
+
 
     /**
      * 根据仓库ID查找所有库存
@@ -99,7 +96,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
            "WHERE i.deleted = false AND " +
            "(:warehouseId IS NULL OR w.id = :warehouseId) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
-           "g.code LIKE %:keyword% OR g.name LIKE %:keyword% OR i.batchNumber LIKE %:keyword%)")
+           "g.code LIKE %:keyword% OR g.name LIKE %:keyword%)")
     Page<Inventory> findByWarehouseAndKeyword(@Param("warehouseId") Long warehouseId, @Param("keyword") String keyword, Pageable pageable);
 
     /**
@@ -108,7 +105,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.quantity > 0 AND " +
            "(:warehouseId IS NULL OR i.warehouse.id = :warehouseId) AND " +
            "(:keyword IS NULL OR :keyword = '' OR " +
-           "i.goods.code LIKE %:keyword% OR i.goods.name LIKE %:keyword% OR i.batchNumber LIKE %:keyword%)")
+           "i.goods.code LIKE %:keyword% OR i.goods.name LIKE %:keyword%)")
     Page<Inventory> findWithStockByWarehouseAndKeyword(@Param("warehouseId") Long warehouseId, @Param("keyword") String keyword, Pageable pageable);
 
     /**
@@ -138,13 +135,13 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     /**
      * 统计低库存商品数量
      */
-    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.deleted = false AND i.quantity <= i.goods.minStock AND i.goods.minStock > 0")
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.deleted = false AND i.quantity > 0 AND i.quantity < i.goods.minStock AND i.goods.minStock > 0")
     long countLowStock();
 
     /**
      * 根据仓库统计低库存商品数量
      */
-    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND i.quantity <= i.goods.minStock AND i.goods.minStock > 0")
+    @Query("SELECT COUNT(i) FROM Inventory i WHERE i.warehouse.id = :warehouseId AND i.deleted = false AND i.quantity > 0 AND i.quantity < i.goods.minStock AND i.goods.minStock > 0")
     long countLowStockByWarehouse(@Param("warehouseId") Long warehouseId);
 
     /**
@@ -189,17 +186,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
     @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.quantity BETWEEN :minQuantity AND :maxQuantity ORDER BY i.quantity DESC")
     List<Inventory> findByQuantityRange(@Param("minQuantity") BigDecimal minQuantity, @Param("maxQuantity") BigDecimal maxQuantity);
 
-    /**
-     * 根据批次号查找库存
-     */
-    @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.batchNumber LIKE %:batchNumber% ORDER BY i.batchNumber")
-    List<Inventory> findByBatchNumberContaining(@Param("batchNumber") String batchNumber);
 
-    /**
-     * 根据库位查找库存
-     */
-    @Query("SELECT i FROM Inventory i WHERE i.deleted = false AND i.location LIKE %:location% ORDER BY i.location")
-    List<Inventory> findByLocationContaining(@Param("location") String location);
 
     // ===== 为Service层添加兼容方法 =====
 
@@ -470,7 +457,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      */
     @Query("SELECT i.id, i.goods.name, i.warehouse.name, i.quantity, i.goods.minStock " +
            "FROM Inventory i WHERE i.warehouse.id = :warehouseId AND i.deleted = false " +
-           "AND i.quantity > 0 AND i.goods.minStock > 0 AND i.quantity <= i.goods.minStock")
+           "AND i.quantity > 0 AND i.goods.minStock > 0 AND i.quantity < i.goods.minStock")
     List<Object[]> findLowStockInfoByWarehouse(@Param("warehouseId") Long warehouseId);
 
     /**
@@ -478,7 +465,7 @@ public interface InventoryRepository extends JpaRepository<Inventory, Long> {
      */
     @Query("SELECT i.id, i.goods.name, i.warehouse.name, i.quantity, i.goods.minStock " +
            "FROM Inventory i WHERE i.deleted = false " +
-           "AND i.quantity > 0 AND i.goods.minStock > 0 AND i.quantity <= i.goods.minStock")
+           "AND i.quantity > 0 AND i.goods.minStock > 0 AND i.quantity < i.goods.minStock")
     List<Object[]> findLowStockInfo();
 
     /**

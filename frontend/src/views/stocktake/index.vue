@@ -779,7 +779,6 @@
           <el-table-column prop="categoryName" label="分类" width="100" />
           <el-table-column prop="currentStock" label="当前库存" width="100" align="right" />
           <el-table-column prop="availableStock" label="可用库存" width="100" align="right" />
-          <el-table-column prop="location" label="库位" width="100" />
         </el-table>
       </div>
       <template #footer>
@@ -918,7 +917,6 @@ const approvalForm = reactive({
 // 批量添加筛选
 const batchFilter = reactive({
   categoryId: null,
-  location: '',
   onlyWithStock: false
 })
 
@@ -1460,8 +1458,6 @@ const handleSelectGoods = (goods) => {
     row.categoryName = goods.categoryName
     row.bookQuantity = goods.currentStock || 0
     row.availableStock = goods.availableStock || 0
-    row.location = goods.location || ''
-    row.batchNumber = goods.batchNumber || ''
   }
   goodsSelectVisible.value = false
 }
@@ -1505,14 +1501,10 @@ const handleGoodsChange = async (row, index) => {
         const response = await request.get(`/inventory/goods/${row.goodsId}/warehouse/${form.warehouseId}`)
         if (response.success) {
           row.bookQuantity = response.data.quantity || 0
-          row.locations = response.data.locations || []
-          row.batches = response.data.batches || []
         }
       } catch (error) {
         console.error('获取库存信息失败:', error)
         row.bookQuantity = 0
-        row.locations = []
-        row.batches = []
       }
     }
   }

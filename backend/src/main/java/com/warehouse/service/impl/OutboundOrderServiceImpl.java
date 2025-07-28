@@ -118,8 +118,7 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
             detail.setQuantity(detailDTO.getQuantity());
             detail.setUnitPrice(detailDTO.getUnitPrice());
             detail.setAmount(detailDTO.getAmount());
-            detail.setBatchNumber(detailDTO.getBatchNumber());
-            detail.setLocation(detailDTO.getLocation());
+
             detail.setRemark(detailDTO.getRemark());
 
             outboundOrderDetailRepository.save(detail);
@@ -182,8 +181,7 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
             detail.setQuantity(detailDTO.getQuantity());
             detail.setUnitPrice(detailDTO.getUnitPrice());
             detail.setAmount(detailDTO.getUnitPrice().multiply(detailDTO.getQuantity()));
-            detail.setBatchNumber(detailDTO.getBatchNumber());
-            detail.setLocation(detailDTO.getLocation());
+
             detail.setRemark(detailDTO.getRemark());
 
             outboundOrderDetailRepository.save(detail);
@@ -253,8 +251,7 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
                 detail.setQuantity(detailDTO.getQuantity());
                 detail.setUnitPrice(detailDTO.getUnitPrice());
                 detail.setAmount(detailDTO.getAmount());
-                detail.setBatchNumber(detailDTO.getBatchNumber());
-                detail.setLocation(detailDTO.getLocation());
+
                 detail.setRemark(detailDTO.getRemark());
 
                 outboundOrderDetailRepository.save(detail);

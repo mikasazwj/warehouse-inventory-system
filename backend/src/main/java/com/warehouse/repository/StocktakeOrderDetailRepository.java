@@ -31,10 +31,7 @@ public interface StocktakeOrderDetailRepository extends JpaRepository<StocktakeO
      */
     List<StocktakeOrderDetail> findByGoodsId(Long goodsId);
 
-    /**
-     * 根据批次号查找明细
-     */
-    List<StocktakeOrderDetail> findByBatchNumberContaining(String batchNumber);
+
 
     /**
      * 查找有差异的明细

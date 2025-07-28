@@ -29,11 +29,11 @@ INSERT INTO goods (id, name, code, barcode, category_id, specification, unit, pu
 VALUES (2, 'MacBook Pro', 'GOODS002', '1234567890124', 3, '13寸 M3芯片', '台', 12000.00, 15000.00, '苹果笔记本', true, CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'admin', 'admin', false, 0);
 
 -- 插入初始库存
-INSERT INTO inventories (id, warehouse_id, goods_id, quantity, available_quantity, reserved_quantity, batch_number, production_date, expiry_date, location, created_time, updated_time, created_by, updated_by, deleted, version)
-VALUES (1, 1, 1, 100.000, 100.000, 0.000, 'BATCH001', '2024-01-01', '2026-01-01', 'A-01-01', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'admin', 'admin', false, 0);
+INSERT INTO inventories (id, warehouse_id, goods_id, quantity, available_quantity, reserved_quantity, production_date, expiry_date, created_time, updated_time, created_by, updated_by, deleted, version)
+VALUES (1, 1, 1, 100.000, 100.000, 0.000, '2024-01-01', '2026-01-01', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'admin', 'admin', false, 0);
 
-INSERT INTO inventories (id, warehouse_id, goods_id, quantity, available_quantity, reserved_quantity, batch_number, production_date, expiry_date, location, created_time, updated_time, created_by, updated_by, deleted, version)
-VALUES (2, 1, 2, 50.000, 50.000, 0.000, 'BATCH002', '2024-01-01', '2026-01-01', 'A-01-02', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'admin', 'admin', false, 0);
+INSERT INTO inventories (id, warehouse_id, goods_id, quantity, available_quantity, reserved_quantity, production_date, expiry_date, created_time, updated_time, created_by, updated_by, deleted, version)
+VALUES (2, 1, 2, 50.000, 50.000, 0.000, '2024-01-01', '2026-01-01', CURRENT_TIMESTAMP(), CURRENT_TIMESTAMP(), 'admin', 'admin', false, 0);
 
 -- 为管理员分配仓库权限
 INSERT INTO user_warehouses (user_id, warehouse_id) VALUES (1, 1);

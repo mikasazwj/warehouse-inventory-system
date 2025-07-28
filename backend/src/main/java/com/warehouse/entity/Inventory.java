@@ -14,17 +14,12 @@ import java.time.LocalDate;
  * @author Warehouse Team
  */
 @Entity
-@Table(name = "inventories", 
+@Table(name = "inventories",
     indexes = {
         @Index(name = "idx_inventory_warehouse_goods", columnList = "warehouse_id,goods_id", unique = true),
         @Index(name = "idx_inventory_warehouse", columnList = "warehouse_id"),
         @Index(name = "idx_inventory_goods", columnList = "goods_id"),
-        @Index(name = "idx_inventory_quantity", columnList = "quantity"),
-        @Index(name = "idx_inventory_batch", columnList = "batch_number")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uk_warehouse_goods_batch", 
-                         columnNames = {"warehouse_id", "goods_id", "batch_number"})
+        @Index(name = "idx_inventory_quantity", columnList = "quantity")
     }
 )
 public class Inventory extends BaseEntity {
@@ -60,17 +55,11 @@ public class Inventory extends BaseEntity {
     @Column(name = "latest_cost", precision = 15, scale = 4)
     private BigDecimal latestCost = BigDecimal.ZERO;
 
-    @Column(name = "batch_number", length = 100)
-    private String batchNumber;
-
     @Column(name = "production_date")
     private LocalDate productionDate;
 
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
-
-    @Column(name = "location", length = 100)
-    private String location;
 
     @Column(name = "last_inbound_date")
     private LocalDate lastInboundDate;
@@ -158,13 +147,7 @@ public class Inventory extends BaseEntity {
         this.latestCost = latestCost;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
 
     public LocalDate getProductionDate() {
         return productionDate;
@@ -182,13 +165,7 @@ public class Inventory extends BaseEntity {
         this.expiryDate = expiryDate;
     }
 
-    public String getLocation() {
-        return location;
-    }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
 
     public LocalDate getLastInboundDate() {
         return lastInboundDate;

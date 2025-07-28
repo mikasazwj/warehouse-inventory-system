@@ -290,18 +290,13 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         // 更新其他信息（但不直接设置成本价格，因为已经通过inbound方法处理）
-        if (request.getBatchNumber() != null) {
-            inventory.setBatchNumber(request.getBatchNumber());
-        }
         if (request.getProductionDate() != null) {
             inventory.setProductionDate(request.getProductionDate());
         }
         if (request.getExpiryDate() != null) {
             inventory.setExpiryDate(request.getExpiryDate());
         }
-        if (request.getLocation() != null) {
-            inventory.setLocation(request.getLocation());
-        }
+
 
         // 计算总价值
         if (inventory.getCostPrice() != null) {
@@ -349,20 +344,17 @@ public class InventoryServiceImpl implements InventoryService {
     }
 
     @Override
-    public InventoryDTO inboundInventory(Long warehouseId, Long goodsId, BigDecimal quantity, 
-                                       BigDecimal costPrice, String batchNumber, 
-                                       LocalDate productionDate, LocalDate expiryDate, String location) {
+    public InventoryDTO inboundInventory(Long warehouseId, Long goodsId, BigDecimal quantity,
+                                       BigDecimal costPrice, LocalDate productionDate, LocalDate expiryDate) {
         InventoryDTO.AdjustRequest request = new InventoryDTO.AdjustRequest();
         request.setWarehouseId(warehouseId);
         request.setGoodsId(goodsId);
         request.setAdjustQuantity(quantity);
         request.setCostPrice(costPrice);
-        request.setBatchNumber(batchNumber);
         request.setProductionDate(productionDate);
         request.setExpiryDate(expiryDate);
-        request.setLocation(location);
         request.setReason("入库");
-        
+
         return adjustInventory(request);
     }
 
@@ -447,23 +439,9 @@ public class InventoryServiceImpl implements InventoryService {
                 .orElse(BigDecimal.ZERO);
     }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventoryDTO> findByBatchNumber(String batchNumber) {
-        return inventoryRepository.findByBatchNumberContaining(batchNumber)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<InventoryDTO> findByLocation(String location) {
-        return inventoryRepository.findByLocationContaining(location)
-                .stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
-    }
+
+
 
     @Override
     @Transactional(readOnly = true)
@@ -865,7 +843,7 @@ public class InventoryServiceImpl implements InventoryService {
             String[] headers = {
                 "序号", "仓库名称", "货物编码", "货物名称", "分类", "规格型号",
                 "单位", "当前库存", "可用库存", "锁定库存", "平均成本", "库存价值",
-                "批次号", "生产日期", "过期日期", "库位", "库存状态", "更新时间"
+                "生产日期", "过期日期", "库存状态", "更新时间"
             };
 
             CellStyle headerStyle = workbook.createCellStyle();
@@ -899,15 +877,13 @@ public class InventoryServiceImpl implements InventoryService {
                 row.createCell(9).setCellValue(inventory.getLockedQuantity().doubleValue());
                 row.createCell(10).setCellValue(inventory.getAverageCost().doubleValue());
                 row.createCell(11).setCellValue(inventory.getQuantity().multiply(inventory.getAverageCost()).doubleValue());
-                row.createCell(12).setCellValue(inventory.getBatchNumber() != null ? inventory.getBatchNumber() : "");
-                row.createCell(13).setCellValue(inventory.getProductionDate() != null ? inventory.getProductionDate().toString() : "");
-                row.createCell(14).setCellValue(inventory.getExpiryDate() != null ? inventory.getExpiryDate().toString() : "");
-                row.createCell(15).setCellValue(inventory.getLocation() != null ? inventory.getLocation() : "");
+                row.createCell(12).setCellValue(inventory.getProductionDate() != null ? inventory.getProductionDate().toString() : "");
+                row.createCell(13).setCellValue(inventory.getExpiryDate() != null ? inventory.getExpiryDate().toString() : "");
 
                 // 生成库存状态
                 InventoryDTO.InventoryStatus status = generateInventoryStatus(inventory);
-                row.createCell(16).setCellValue(status.getStatusText());
-                row.createCell(17).setCellValue(inventory.getUpdatedTime() != null ? inventory.getUpdatedTime().toString() : "");
+                row.createCell(14).setCellValue(status.getStatusText());
+                row.createCell(15).setCellValue(inventory.getUpdatedTime() != null ? inventory.getUpdatedTime().toString() : "");
             }
 
             // 自动调整列宽
@@ -1024,7 +1000,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<InventoryDTO.GoodsInventoryInfo> getWarehouseGoodsList(Long warehouseId, Long categoryId, String location, boolean onlyWithStock) {
+    public List<InventoryDTO.GoodsInventoryInfo> getWarehouseGoodsList(Long warehouseId, Long categoryId, boolean onlyWithStock) {
         try {
             List<Inventory> inventories;
 
@@ -1042,11 +1018,6 @@ public class InventoryServiceImpl implements InventoryService {
                         if (categoryId != null && !categoryId.equals(inventory.getGoods().getCategory().getId())) {
                             return false;
                         }
-                        // 按库位过滤
-                        if (location != null && !location.trim().isEmpty() &&
-                            (inventory.getLocation() == null || !inventory.getLocation().contains(location.trim()))) {
-                            return false;
-                        }
                         return true;
                     })
                     .map(inventory -> {
@@ -1061,14 +1032,12 @@ public class InventoryServiceImpl implements InventoryService {
                                 goods.getUnit(),
                                 goods.getCategory().getName(),
                                 inventory.getQuantity(),
-                                inventory.getAvailableQuantity(),
-                                inventory.getLocation(),
-                                inventory.getBatchNumber()
+                                inventory.getAvailableQuantity()
                         );
                     })
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            logger.error("获取仓库货物列表失败: warehouseId={}, categoryId={}, location={}", warehouseId, categoryId, location, e);
+            logger.error("获取仓库货物列表失败: warehouseId={}, categoryId={}", warehouseId, categoryId, e);
             return new ArrayList<>();
         }
     }

@@ -14,8 +14,7 @@ import java.math.BigDecimal;
 @Entity
 @Table(name = "outbound_order_details", indexes = {
     @Index(name = "idx_outbound_detail_order", columnList = "outbound_order_id"),
-    @Index(name = "idx_outbound_detail_goods", columnList = "goods_id"),
-    @Index(name = "idx_outbound_detail_batch", columnList = "batch_number")
+    @Index(name = "idx_outbound_detail_goods", columnList = "goods_id")
 })
 public class OutboundOrderDetail extends BaseEntity {
 
@@ -46,11 +45,7 @@ public class OutboundOrderDetail extends BaseEntity {
     @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount = BigDecimal.ZERO;
 
-    @Column(name = "batch_number", length = 100)
-    private String batchNumber;
 
-    @Column(name = "location", length = 100)
-    private String location;
 
     @Column(name = "remark", length = 500)
     private String remark;
@@ -126,21 +121,7 @@ public class OutboundOrderDetail extends BaseEntity {
         this.amount = amount;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
-
-    public String getLocation() {
-        return location;
-    }
-
-    public void setLocation(String location) {
-        this.location = location;
-    }
 
     public String getRemark() {
         return remark;
@@ -161,12 +142,7 @@ public class OutboundOrderDetail extends BaseEntity {
         }
     }
 
-    /**
-     * 判断是否有批次号
-     */
-    public boolean hasBatchNumber() {
-        return batchNumber != null && !batchNumber.trim().isEmpty();
-    }
+
 
     /**
      * 判断数量是否一致
@@ -197,7 +173,7 @@ public class OutboundOrderDetail extends BaseEntity {
                 ", actualQuantity=" + actualQuantity +
                 ", unitPrice=" + unitPrice +
                 ", amount=" + amount +
-                ", batchNumber='" + batchNumber + '\'' +
+
                 '}';
     }
 }

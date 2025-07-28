@@ -15,8 +15,7 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "inbound_order_details", indexes = {
     @Index(name = "idx_inbound_detail_order", columnList = "inbound_order_id"),
-    @Index(name = "idx_inbound_detail_goods", columnList = "goods_id"),
-    @Index(name = "idx_inbound_detail_batch", columnList = "batch_number")
+    @Index(name = "idx_inbound_detail_goods", columnList = "goods_id")
 })
 public class InboundOrderDetail extends BaseEntity {
 
@@ -47,17 +46,11 @@ public class InboundOrderDetail extends BaseEntity {
     @Column(name = "amount", precision = 15, scale = 2)
     private BigDecimal amount = BigDecimal.ZERO;
 
-    @Column(name = "batch_number", length = 100)
-    private String batchNumber;
-
     @Column(name = "production_date")
     private LocalDate productionDate;
 
     @Column(name = "expiry_date")
     private LocalDate expiryDate;
-
-    @Column(name = "location", length = 100)
-    private String location;
 
     @Column(name = "quality_status", length = 20)
     private String qualityStatus = "合格";
@@ -136,13 +129,7 @@ public class InboundOrderDetail extends BaseEntity {
         this.amount = amount;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
 
     public LocalDate getProductionDate() {
         return productionDate;
@@ -160,13 +147,7 @@ public class InboundOrderDetail extends BaseEntity {
         this.expiryDate = expiryDate;
     }
 
-    public String getLocation() {
-        return location;
-    }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
 
     public String getQualityStatus() {
         return qualityStatus;
@@ -195,12 +176,7 @@ public class InboundOrderDetail extends BaseEntity {
         }
     }
 
-    /**
-     * 判断是否有批次号
-     */
-    public boolean hasBatchNumber() {
-        return batchNumber != null && !batchNumber.trim().isEmpty();
-    }
+
 
     /**
      * 判断是否有保质期
@@ -245,7 +221,7 @@ public class InboundOrderDetail extends BaseEntity {
                 ", actualQuantity=" + actualQuantity +
                 ", unitPrice=" + unitPrice +
                 ", amount=" + amount +
-                ", batchNumber='" + batchNumber + '\'' +
+
                 '}';
     }
 }

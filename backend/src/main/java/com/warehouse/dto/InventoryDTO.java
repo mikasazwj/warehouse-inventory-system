@@ -51,13 +51,9 @@ public class InventoryDTO {
     @DecimalMin(value = "0.0", message = "库存价值不能为负数")
     private BigDecimal totalValue;
 
-    private String batchNumber;
-
     private LocalDate productionDate;
 
     private LocalDate expiryDate;
-
-    private String location;
 
     private LocalDateTime createdTime;
 
@@ -189,13 +185,7 @@ public class InventoryDTO {
         this.totalValue = totalValue;
     }
 
-    public String getBatchNumber() {
-        return batchNumber;
-    }
 
-    public void setBatchNumber(String batchNumber) {
-        this.batchNumber = batchNumber;
-    }
 
     public LocalDate getProductionDate() {
         return productionDate;
@@ -213,13 +203,7 @@ public class InventoryDTO {
         this.expiryDate = expiryDate;
     }
 
-    public String getLocation() {
-        return location;
-    }
 
-    public void setLocation(String location) {
-        this.location = location;
-    }
 
     public LocalDateTime getCreatedTime() {
         return createdTime;
@@ -277,12 +261,7 @@ public class InventoryDTO {
         return availableQuantity != null && availableQuantity.compareTo(BigDecimal.ZERO) > 0;
     }
 
-    /**
-     * 判断是否有批次号
-     */
-    public boolean hasBatchNumber() {
-        return batchNumber != null && !batchNumber.trim().isEmpty();
-    }
+
 
     /**
      * 判断是否即将过期
@@ -405,10 +384,8 @@ public class InventoryDTO {
         private BigDecimal setQuantity;
 
         private BigDecimal costPrice;
-        private String batchNumber;
         private LocalDate productionDate;
         private LocalDate expiryDate;
-        private String location;
         private String reason;
 
         // Getters and Setters
@@ -422,14 +399,10 @@ public class InventoryDTO {
         public void setSetQuantity(BigDecimal setQuantity) { this.setQuantity = setQuantity; }
         public BigDecimal getCostPrice() { return costPrice; }
         public void setCostPrice(BigDecimal costPrice) { this.costPrice = costPrice; }
-        public String getBatchNumber() { return batchNumber; }
-        public void setBatchNumber(String batchNumber) { this.batchNumber = batchNumber; }
         public LocalDate getProductionDate() { return productionDate; }
         public void setProductionDate(LocalDate productionDate) { this.productionDate = productionDate; }
         public LocalDate getExpiryDate() { return expiryDate; }
         public void setExpiryDate(LocalDate expiryDate) { this.expiryDate = expiryDate; }
-        public String getLocation() { return location; }
-        public void setLocation(String location) { this.location = location; }
         public String getReason() { return reason; }
         public void setReason(String reason) { this.reason = reason; }
     }
@@ -559,14 +532,12 @@ public class InventoryDTO {
         private String categoryName;
         private BigDecimal currentStock;
         private BigDecimal availableStock;
-        private String location;
-        private String batchNumber;
 
         public GoodsInventoryInfo() {}
 
         public GoodsInventoryInfo(Long id, String code, String name, String specification, String model,
                                 String brand, String unit, String categoryName, BigDecimal currentStock,
-                                BigDecimal availableStock, String location, String batchNumber) {
+                                BigDecimal availableStock) {
             this.id = id;
             this.code = code;
             this.name = name;
@@ -577,8 +548,6 @@ public class InventoryDTO {
             this.categoryName = categoryName;
             this.currentStock = currentStock;
             this.availableStock = availableStock;
-            this.location = location;
-            this.batchNumber = batchNumber;
         }
 
         // Getters and Setters
@@ -602,10 +571,6 @@ public class InventoryDTO {
         public void setCurrentStock(BigDecimal currentStock) { this.currentStock = currentStock; }
         public BigDecimal getAvailableStock() { return availableStock; }
         public void setAvailableStock(BigDecimal availableStock) { this.availableStock = availableStock; }
-        public String getLocation() { return location; }
-        public void setLocation(String location) { this.location = location; }
-        public String getBatchNumber() { return batchNumber; }
-        public void setBatchNumber(String batchNumber) { this.batchNumber = batchNumber; }
     }
 
     /**

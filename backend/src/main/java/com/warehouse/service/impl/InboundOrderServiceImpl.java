@@ -100,10 +100,8 @@ public class InboundOrderServiceImpl implements InboundOrderService {
             detail.setQuantity(detailDTO.getQuantity());
             detail.setUnitPrice(detailDTO.getUnitPrice());
             detail.setAmount(detailDTO.getAmount());
-            detail.setBatchNumber(detailDTO.getBatchNumber());
             detail.setProductionDate(detailDTO.getProductionDate());
             detail.setExpiryDate(detailDTO.getExpiryDate());
-            detail.setLocation(detailDTO.getLocation());
             detail.setRemark(detailDTO.getRemark());
 
             inboundOrderDetailRepository.save(detail);
@@ -161,10 +159,8 @@ public class InboundOrderServiceImpl implements InboundOrderService {
             detail.setQuantity(detailDTO.getQuantity());
             detail.setUnitPrice(detailDTO.getUnitPrice());
             detail.setAmount(detailDTO.getUnitPrice().multiply(detailDTO.getQuantity()));
-            detail.setBatchNumber(detailDTO.getBatchNumber());
             detail.setProductionDate(detailDTO.getProductionDate());
             detail.setExpiryDate(detailDTO.getExpiryDate());
-            detail.setLocation(detailDTO.getLocation());
             detail.setRemark(detailDTO.getRemark());
 
             inboundOrderDetailRepository.save(detail);
@@ -215,10 +211,8 @@ public class InboundOrderServiceImpl implements InboundOrderService {
                 detail.setQuantity(detailDTO.getQuantity());
                 detail.setUnitPrice(detailDTO.getUnitPrice());
                 detail.setAmount(detailDTO.getAmount());
-                detail.setBatchNumber(detailDTO.getBatchNumber());
                 detail.setProductionDate(detailDTO.getProductionDate());
                 detail.setExpiryDate(detailDTO.getExpiryDate());
-                detail.setLocation(detailDTO.getLocation());
                 detail.setRemark(detailDTO.getRemark());
 
                 inboundOrderDetailRepository.save(detail);
@@ -431,10 +425,8 @@ public class InboundOrderServiceImpl implements InboundOrderService {
                     detail.getGoods().getId(),
                     detail.getQuantity(),
                     detail.getUnitPrice(),
-                    detail.getBatchNumber(),
                     detail.getProductionDate(),
-                    detail.getExpiryDate(),
-                    detail.getLocation()
+                    detail.getExpiryDate()
             );
         }
 

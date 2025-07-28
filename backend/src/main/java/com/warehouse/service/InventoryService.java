@@ -96,9 +96,8 @@ public interface InventoryService {
     /**
      * 库存入库
      */
-    InventoryDTO inboundInventory(Long warehouseId, Long goodsId, BigDecimal quantity, 
-                                 BigDecimal costPrice, String batchNumber, 
-                                 LocalDate productionDate, LocalDate expiryDate, String location);
+    InventoryDTO inboundInventory(Long warehouseId, Long goodsId, BigDecimal quantity,
+                                 BigDecimal costPrice, LocalDate productionDate, LocalDate expiryDate);
 
     /**
      * 库存出库
@@ -135,15 +134,7 @@ public interface InventoryService {
      */
     BigDecimal getLockedQuantity(Long warehouseId, Long goodsId);
 
-    /**
-     * 根据批次号查找库存
-     */
-    List<InventoryDTO> findByBatchNumber(String batchNumber);
 
-    /**
-     * 根据位置查找库存
-     */
-    List<InventoryDTO> findByLocation(String location);
 
     /**
      * 根据生产日期范围查找库存
@@ -203,7 +194,7 @@ public interface InventoryService {
     /**
      * 获取指定仓库的库存货物列表（用于盘点选择）
      */
-    List<InventoryDTO.GoodsInventoryInfo> getWarehouseGoodsList(Long warehouseId, Long categoryId, String location, boolean onlyWithStock);
+    List<InventoryDTO.GoodsInventoryInfo> getWarehouseGoodsList(Long warehouseId, Long categoryId, boolean onlyWithStock);
 
     /**
      * 库存统计信息

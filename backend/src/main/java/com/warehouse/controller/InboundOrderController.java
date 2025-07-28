@@ -11,8 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -38,6 +41,8 @@ public class InboundOrderController {
             @RequestParam(required = false) BusinessType businessType,
             @RequestParam(required = false) ApprovalStatus status,
             @RequestParam(required = false) Long warehouseId,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") LocalDate endDate,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         
@@ -46,11 +51,17 @@ public class InboundOrderController {
         System.out.println("warehouseId: " + warehouseId);
         System.out.println("businessType: " + businessType);
         System.out.println("status: " + status);
-        
+        System.out.println("startDate: " + startDate);
+        System.out.println("endDate: " + endDate);
+
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdTime"));
-        
+
+        // 将LocalDate转换为String
+        String startDateStr = startDate != null ? startDate.toString() : "";
+        String endDateStr = endDate != null ? endDate.toString() : "";
+
         PageResponse<InboundOrderDTO> orders = inboundOrderService.findByPageWithFilters(
-                keyword, warehouseId, businessType, status, "", "", pageable);
+                keyword, warehouseId, businessType, status, startDateStr, endDateStr, pageable);
         
         System.out.println("查询结果数量: " + orders.getTotalElements());
         return ApiResponse.success(orders);

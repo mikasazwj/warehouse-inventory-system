@@ -342,9 +342,6 @@ public class StocktakeOrderDTO {
         private BigDecimal actualQuantity;
 
         private BigDecimal differenceQuantity;
-
-        private String batchNumber;
-        private String location;
         private String remark;
 
         // Getters and Setters
@@ -366,10 +363,6 @@ public class StocktakeOrderDTO {
         public void setActualQuantity(BigDecimal actualQuantity) { this.actualQuantity = actualQuantity; }
         public BigDecimal getDifferenceQuantity() { return differenceQuantity; }
         public void setDifferenceQuantity(BigDecimal differenceQuantity) { this.differenceQuantity = differenceQuantity; }
-        public String getBatchNumber() { return batchNumber; }
-        public void setBatchNumber(String batchNumber) { this.batchNumber = batchNumber; }
-        public String getLocation() { return location; }
-        public void setLocation(String location) { this.location = location; }
         public String getRemark() { return remark; }
         public void setRemark(String remark) { this.remark = remark; }
 

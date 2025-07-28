@@ -251,25 +251,7 @@ public class InventoryController {
         return ApiResponse.success(quantity);
     }
 
-    /**
-     * 根据批次号查找库存
-     */
-    @GetMapping("/batch/{batchNumber}")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<List<InventoryDTO>> getInventoryByBatch(@PathVariable String batchNumber) {
-        List<InventoryDTO> inventory = inventoryService.findByBatchNumber(batchNumber);
-        return ApiResponse.success(inventory);
-    }
 
-    /**
-     * 根据位置查找库存
-     */
-    @GetMapping("/location/{location}")
-    @PreAuthorize("isAuthenticated()")
-    public ApiResponse<List<InventoryDTO>> getInventoryByLocation(@PathVariable String location) {
-        List<InventoryDTO> inventory = inventoryService.findByLocation(location);
-        return ApiResponse.success(inventory);
-    }
 
     /**
      * 根据生产日期范围查找库存
@@ -389,9 +371,8 @@ public class InventoryController {
     public ApiResponse<List<InventoryDTO.GoodsInventoryInfo>> getWarehouseGoodsList(
             @PathVariable Long warehouseId,
             @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String location,
             @RequestParam(defaultValue = "false") boolean onlyWithStock) {
-        List<InventoryDTO.GoodsInventoryInfo> goodsList = inventoryService.getWarehouseGoodsList(warehouseId, categoryId, location, onlyWithStock);
+        List<InventoryDTO.GoodsInventoryInfo> goodsList = inventoryService.getWarehouseGoodsList(warehouseId, categoryId, onlyWithStock);
         return ApiResponse.success(goodsList);
     }
 

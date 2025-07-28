@@ -23,10 +23,14 @@
             <el-icon><Upload /></el-icon>
             导入数据
           </el-button>
-          <el-button @click="handleExport" :size="isMobile ? 'small' : 'default'">
-            <el-icon><Download /></el-icon>
-            导出数据
-          </el-button>
+          <GoodsExport
+            :selected-goods="selectedRows"
+            :current-page-data="tableData"
+            :search-params="searchForm"
+            :categories="categories"
+            :size="isMobile ? 'small' : 'default'"
+            @refresh="loadData"
+          />
         </div>
       </div>
     </div>
@@ -286,19 +290,45 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogTitle"
-      :width="isMobile ? '95%' : '700px'"
+      :width="isMobile ? '95%' : '900px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
-      class="goods-dialog"
+      class="goods-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="formRules"
-        :label-width="isMobile ? '80px' : '100px'"
-        :label-position="isMobile ? 'top' : 'right'"
-      >
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>{{ dialogTitle }}</h3>
+              <p>{{ form.id ? '修改货物信息和规格' : '创建新的货物档案' }}</p>
+            </div>
+          </div>
+          <el-button type="text" @click="dialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <!-- 基本信息卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>基本信息</span>
+          </div>
+          <el-form
+            ref="formRef"
+            :model="form"
+            :rules="formRules"
+            :label-width="isMobile ? '80px' : '100px'"
+            :label-position="isMobile ? 'top' : 'right'"
+          >
         <el-row :gutter="isMobile ? 10 : 20">
           <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="货物编码" prop="code">
@@ -372,7 +402,9 @@
             placeholder="请输入货物描述"
           />
         </el-form-item>
-      </el-form>
+          </el-form>
+        </div>
+      </div>
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmit" :loading="submitLoading">
@@ -384,13 +416,40 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      title="货物详情"
-      :width="isMobile ? '95%' : '600px'"
+      :width="isMobile ? '95%' : '800px'"
       :fullscreen="isMobile"
-      class="goods-detail-dialog"
+      class="goods-detail-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <div class="detail-content" v-if="viewData">
-        <el-descriptions :column="isMobile ? 1 : 2" border>
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon view-icon">
+              <el-icon><View /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>货物详情</h3>
+              <p>查看货物的详细信息</p>
+            </div>
+          </div>
+          <el-button type="text" @click="viewDialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <div class="detail-content" v-if="viewData">
+          <!-- 基本信息卡片 -->
+          <div class="info-card">
+            <div class="card-header">
+              <el-icon><InfoFilled /></el-icon>
+              <span>基本信息</span>
+            </div>
+            <div class="card-content">
+              <el-descriptions :column="isMobile ? 1 : 2" border>
           <el-descriptions-item label="货物编码">{{ viewData.code }}</el-descriptions-item>
           <el-descriptions-item label="货物名称">{{ viewData.name }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ viewData.categoryName }}</el-descriptions-item>
@@ -406,26 +465,55 @@
           </el-descriptions-item>
           <el-descriptions-item label="创建时间">{{ formatDateTime(viewData.createdTime) }}</el-descriptions-item>
           <el-descriptions-item label="描述" :span="2">{{ viewData.description || '-' }}</el-descriptions-item>
-        </el-descriptions>
+              </el-descriptions>
+            </div>
+          </div>
+        </div>
       </div>
     </el-dialog>
 
     <!-- 分类管理对话框 -->
     <el-dialog
       v-model="categoryDialogVisible"
-      title="分类管理"
-      :width="isMobile ? '95%' : '500px'"
+      :width="isMobile ? '95%' : '700px'"
       :fullscreen="isMobile"
-      class="category-dialog"
+      class="category-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <div class="category-management">
-        <div class="category-header">
-          <el-button type="primary" size="small" @click="handleAddCategory">
-            <el-icon><Plus /></el-icon>
-            新增分类
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><FolderOpened /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>分类管理</h3>
+              <p>管理货物分类信息</p>
+            </div>
+          </div>
+          <el-button type="text" @click="categoryDialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
           </el-button>
         </div>
-        <el-table :data="categories" size="small">
+      </template>
+
+      <div class="dialog-body">
+        <!-- 分类列表卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><List /></el-icon>
+            <span>分类列表</span>
+          </div>
+          <div class="category-management">
+            <div class="category-header">
+              <el-button type="primary" size="small" @click="handleAddCategory">
+                <el-icon><Plus /></el-icon>
+                新增分类
+              </el-button>
+            </div>
+            <el-table :data="categories" size="small">
           <el-table-column prop="name" label="分类名称" />
           <el-table-column prop="description" label="描述" />
           <el-table-column label="操作" width="150" align="center">
@@ -440,35 +528,65 @@
               </div>
             </template>
           </el-table-column>
-        </el-table>
+            </el-table>
+          </div>
+        </div>
       </div>
     </el-dialog>
 
     <!-- 分类编辑对话框 -->
     <el-dialog
       v-model="categoryFormVisible"
-      :title="categoryForm.id ? '编辑分类' : '新增分类'"
-      :width="isMobile ? '95%' : '400px'"
+      :width="isMobile ? '95%' : '600px'"
       :fullscreen="isMobile"
-      class="category-form-dialog"
+      class="category-form-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <el-form
-        :model="categoryForm"
-        :rules="categoryRules"
-        ref="categoryFormRef"
-        :label-width="isMobile ? '70px' : '80px'"
-        :label-position="isMobile ? 'top' : 'right'"
-      >
-        <el-form-item label="分类编码" prop="code">
-          <el-input v-model="categoryForm.code" placeholder="请输入分类编码" :disabled="!!categoryForm.id" />
-        </el-form-item>
-        <el-form-item label="分类名称" prop="name">
-          <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
-        </el-form-item>
-        <el-form-item label="描述" prop="description">
-          <el-input v-model="categoryForm.description" type="textarea" :rows="3" placeholder="请输入描述" />
-        </el-form-item>
-      </el-form>
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Plus v-if="!categoryForm.id" /><Edit v-else /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>{{ categoryForm.id ? '编辑分类' : '新增分类' }}</h3>
+              <p>{{ categoryForm.id ? '修改分类信息' : '创建新的分类' }}</p>
+            </div>
+          </div>
+          <el-button type="text" @click="categoryFormVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <!-- 分类信息卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><InfoFilled /></el-icon>
+            <span>分类信息</span>
+          </div>
+          <el-form
+            :model="categoryForm"
+            :rules="categoryRules"
+            ref="categoryFormRef"
+            :label-width="isMobile ? '70px' : '80px'"
+            :label-position="isMobile ? 'top' : 'right'"
+          >
+            <el-form-item label="分类编码" prop="code">
+              <el-input v-model="categoryForm.code" placeholder="请输入分类编码" :disabled="!!categoryForm.id" />
+            </el-form-item>
+            <el-form-item label="分类名称" prop="name">
+              <el-input v-model="categoryForm.name" placeholder="请输入分类名称" />
+            </el-form-item>
+            <el-form-item label="描述" prop="description">
+              <el-input v-model="categoryForm.description" type="textarea" :rows="3" placeholder="请输入描述" />
+            </el-form-item>
+          </el-form>
+        </div>
+      </div>
       <template #footer>
         <el-button @click="categoryFormVisible = false">取消</el-button>
         <el-button type="primary" @click="handleSubmitCategory">确定</el-button>
@@ -478,19 +596,54 @@
     <!-- 导入数据对话框 -->
     <el-dialog
       v-model="importDialogVisible"
-      title="导入货物数据"
-      :width="isMobile ? '95%' : '600px'"
+      :width="isMobile ? '95%' : '900px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
-      class="import-dialog"
+      class="import-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      :z-index="3000"
     >
-      <div class="import-content">
-        <!-- 步骤指示器 -->
-        <el-steps :active="importStep" finish-status="success" align-center class="import-steps">
-          <el-step title="选择文件" />
-          <el-step title="数据预览" />
-          <el-step title="导入完成" />
-        </el-steps>
+      <template #header>
+        <div class="dialog-header">
+          <div class="header-content">
+            <div class="header-icon">
+              <el-icon><Upload /></el-icon>
+            </div>
+            <div class="header-text">
+              <h3>导入货物数据</h3>
+              <p>批量导入货物信息到系统</p>
+            </div>
+          </div>
+          <el-button type="text" @click="importDialogVisible = false" class="close-btn">
+            <el-icon><Close /></el-icon>
+          </el-button>
+        </div>
+      </template>
+
+      <div class="dialog-body">
+        <!-- 导入步骤卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><Operation /></el-icon>
+            <span>导入步骤</span>
+          </div>
+          <div class="import-content">
+            <!-- 步骤指示器 -->
+            <el-steps :active="importStep" finish-status="success" align-center class="import-steps">
+              <el-step title="选择文件" />
+              <el-step title="数据预览" />
+              <el-step title="导入完成" />
+            </el-steps>
+          </div>
+        </div>
+
+        <!-- 导入内容卡片 -->
+        <div class="form-section">
+          <div class="section-title">
+            <el-icon><Document /></el-icon>
+            <span>{{ importStep === 0 ? '文件上传' : importStep === 1 ? '数据预览' : '导入结果' }}</span>
+          </div>
 
         <!-- 步骤1: 文件选择 -->
         <div v-if="importStep === 0" class="step-content">
@@ -620,6 +773,7 @@
             </el-result>
           </div>
         </div>
+        </div>
       </div>
 
       <template #footer>
@@ -648,6 +802,8 @@ import { request } from '@/utils/request'
 import dayjs from 'dayjs'
 import { useDeviceDetection } from '@/utils/responsive'
 import * as XLSX from 'xlsx'
+import { Plus, Edit, View, Close, InfoFilled, FolderOpened, List, Upload, Operation, Document } from '@element-plus/icons-vue'
+import GoodsExport from '@/components/GoodsExport.vue'
 
 // 响应式检测
 const { isMobile, isTablet, isDesktop } = useDeviceDetection()
@@ -932,82 +1088,9 @@ const handleMobileAction = (command, row) => {
   }
 }
 
-const handleExport = async () => {
-  try {
-    ElMessage.info('正在导出数据...')
 
-    if (tableData.value.length === 0) {
-      ElMessage.warning('暂无数据可导出')
-      return
-    }
 
-    // 尝试后端导出
-    try {
-      const params = {
-        keyword: searchForm.keyword || undefined,
-        categoryId: searchForm.categoryId,
-        enabled: searchForm.enabled
-      }
 
-      const response = await request.download('/goods/export', params)
-
-      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `货物数据_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-      window.URL.revokeObjectURL(url)
-
-      ElMessage.success('导出成功')
-    } catch (apiError) {
-      console.log('后端导出接口不可用，使用前端导出')
-      exportToCSV()
-    }
-  } catch (error) {
-    console.error('导出失败:', error)
-    ElMessage.error('导出失败')
-  }
-}
-
-const exportToCSV = () => {
-  try {
-    const headers = ['货物编码', '货物名称', '分类', '单位', '规格/型号', '最小库存', '最大库存', '状态', '创建时间', '备注']
-    const csvContent = [
-      headers.join(','),
-      ...tableData.value.map(row => [
-        row.code || '',
-        row.name || '',
-        row.categoryName || '',
-        row.unit || '',
-        row.specification || '',
-        row.minStock || 0,
-        row.maxStock || 0,
-        row.enabled ? '启用' : '禁用',
-        formatDateTime(row.createdTime) || '',
-        row.description || ''
-      ].map(field => `"${field}"`).join(','))
-    ].join('\n')
-
-    const BOM = '\uFEFF'
-    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
-    const url = window.URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = url
-    link.download = `货物数据_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    window.URL.revokeObjectURL(url)
-
-    ElMessage.success('导出成功')
-  } catch (error) {
-    console.error('CSV导出失败:', error)
-    ElMessage.error('导出失败')
-  }
-}
 
 const handleRefresh = () => {
   loadData()
@@ -1345,6 +1428,218 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// 现代化弹窗样式
+.modern-dialog {
+  :deep(.el-dialog) {
+    z-index: 3000 !important;
+  }
+
+  :deep(.el-overlay) {
+    z-index: 2999 !important;
+  }
+
+  :deep(.el-dialog__header) {
+    padding: 0;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  :deep(.el-dialog__body) {
+    padding: 0;
+  }
+
+  :deep(.el-dialog__footer) {
+    padding: 0;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  // 弹窗头部
+  .dialog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+
+      .header-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        backdrop-filter: blur(10px);
+
+        .el-icon {
+          font-size: 24px;
+        }
+
+        &.view-icon {
+          background: rgba(52, 199, 89, 0.2);
+        }
+      }
+
+      .header-text {
+        h3 {
+          margin: 0 0 4px 0;
+          font-size: 20px;
+          font-weight: 600;
+        }
+
+        p {
+          margin: 0;
+          font-size: 14px;
+          opacity: 0.8;
+        }
+      }
+    }
+
+    .close-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      transition: all 0.3s;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.05);
+      }
+
+      .el-icon {
+        font-size: 18px;
+      }
+    }
+  }
+
+  // 弹窗主体
+  .dialog-body {
+    padding: 32px;
+    background: #fafbfc;
+    min-height: 400px;
+
+    // 表单分组样式
+    .form-section {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e6e8eb;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .section-title {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+
+        .el-icon {
+          font-size: 18px;
+          color: #667eea;
+        }
+      }
+
+      .el-form-item {
+        margin-bottom: 20px;
+
+        .el-form-item__label {
+          font-weight: 500;
+          color: #606266;
+        }
+
+        .el-input, .el-select, .el-textarea {
+          :deep(.el-input__wrapper),
+          :deep(.el-select__wrapper),
+          :deep(.el-textarea__inner) {
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+
+            &:hover {
+              box-shadow: 0 2px 6px rgba(102, 126, 234, 0.15);
+            }
+
+            &.is-focus {
+              box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+          }
+        }
+      }
+    }
+
+    // 详情卡片样式
+    .info-card {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+      border: 1px solid #e6e8eb;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .card-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f0f0f0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #303133;
+
+        .el-icon {
+          font-size: 18px;
+          color: #667eea;
+        }
+      }
+
+      .card-content {
+        :deep(.el-descriptions) {
+          .el-descriptions__header {
+            margin-bottom: 16px;
+          }
+
+          .el-descriptions__body {
+            .el-descriptions__table {
+              .el-descriptions__cell {
+                padding: 12px 16px;
+                border: 1px solid #f0f0f0;
+
+                &.is-bordered-label {
+                  background: #fafbfc;
+                  font-weight: 500;
+                  color: #606266;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 .goods-management {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
@@ -1401,9 +1696,33 @@ onMounted(() => {
 }
 
 .header-actions {
-  display: flex;
+  display: flex !important;
   gap: 12px;
   flex-wrap: wrap;
+  align-items: center;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  .el-button {
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    display: inline-flex !important;
+    visibility: visible !important;
+    box-sizing: border-box !important;
+  }
+
+  > * {
+    display: block !important;
+    visibility: visible !important;
+  }
+
+  /* 确保所有按钮基础样式一致 */
+  .el-button,
+  > * .el-button {
+    box-sizing: border-box !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+  }
 }
 
 /* 搜索区域样式 */
@@ -1673,9 +1992,7 @@ onMounted(() => {
     align-items: stretch;
   }
 
-  .header-actions {
-    justify-content: center;
-  }
+  /* 这个样式被更具体的媒体查询覆盖 */
 
   .search-card {
     padding: 20px;
@@ -1704,6 +2021,147 @@ onMounted(() => {
 
   .pagination-container {
     padding: 16px 20px;
+  }
+}
+
+/* 大屏幕适配 (1024px+) */
+@media (min-width: 1024px) {
+  .header-actions {
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .el-button,
+  .header-actions > * .el-button {
+    min-width: auto;
+    max-width: none;
+    font-size: 14px;
+  }
+}
+
+/* 现代化弹窗移动端适配 */
+@media (max-width: 768px) {
+  .modern-dialog {
+    .dialog-header {
+      padding: 16px 20px;
+
+      .header-content {
+        gap: 12px;
+
+        .header-icon {
+          width: 40px;
+          height: 40px;
+
+          .el-icon {
+            font-size: 20px;
+          }
+        }
+
+        .header-text {
+          h3 {
+            font-size: 18px;
+          }
+
+          p {
+            font-size: 13px;
+          }
+        }
+      }
+
+      .close-btn {
+        width: 36px;
+        height: 36px;
+      }
+    }
+
+    .dialog-body {
+      padding: 16px;
+
+      .form-section,
+      .info-card {
+        padding: 16px;
+        margin-bottom: 16px;
+
+        .section-title,
+        .card-header {
+          font-size: 14px;
+          padding-bottom: 8px;
+          margin-bottom: 16px;
+        }
+
+        .el-form-item {
+          margin-bottom: 16px;
+
+          .el-form-item__label {
+            font-size: 14px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* 平板端适配 (769px - 1023px) */
+@media (max-width: 1023px) and (min-width: 769px) {
+  .header-actions {
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .el-button,
+  .header-actions > * .el-button {
+    flex: 1;
+    min-width: 140px;
+    max-width: 180px;
+    font-size: 14px;
+  }
+}
+
+/* 中等屏幕适配 (481px - 768px) */
+@media (max-width: 768px) and (min-width: 481px) {
+  .header-actions {
+    justify-content: center !important;
+    gap: 12px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    padding: 0 20px !important;
+  }
+
+  .header-actions .el-button,
+  .header-actions > * .el-button,
+  .header-actions .goods-export-btn {
+    flex: 1 !important;
+    min-width: 120px !important;
+    max-width: 150px !important;
+    height: 36px !important;
+    font-size: 13px !important;
+    padding: 8px 12px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    line-height: 1 !important;
+    border-radius: 6px !important;
+    box-sizing: border-box !important;
+
+    /* 覆盖Element Plus的size样式 */
+    &.el-button--small {
+      height: 36px !important;
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
+
+    &.el-button--default {
+      height: 36px !important;
+      padding: 8px 12px !important;
+      font-size: 13px !important;
+    }
+
+    .el-icon {
+      margin-right: 4px !important;
+      font-size: 14px !important;
+    }
   }
 }
 
@@ -1979,15 +2437,58 @@ onMounted(() => {
   }
 
   /* 头部操作按钮适配 */
-  .mobile-actions {
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    justify-content: center !important;
+  .header-actions {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: center !important;
+    padding: 0 20px !important;
+    margin: 16px 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
-  .mobile-actions .el-button {
-    min-width: 44px !important;
-    padding: 8px 12px !important;
+  .header-actions .el-button,
+  .header-actions > * .el-button,
+  .header-actions .goods-export-btn {
+    width: 100% !important;
+    max-width: 280px !important;
+    min-width: auto !important;
+    height: 44px !important;
+    padding: 12px 16px !important;
+    justify-content: center !important;
+    display: flex !important;
+    align-items: center !important;
+    font-size: 14px !important;
+    line-height: 1 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+
+    /* 覆盖Element Plus默认样式 */
+    &.el-button--small {
+      height: 44px !important;
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+    }
+
+    &.el-button--default {
+      height: 44px !important;
+      padding: 12px 16px !important;
+      font-size: 14px !important;
+    }
+
+    .el-icon {
+      margin-right: 6px !important;
+      font-size: 16px !important;
+    }
+  }
+
+  /* 确保GoodsExport组件的按钮也应用样式 */
+  .header-actions > div {
+    width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
   }
 
   /* 页面头部适配 */

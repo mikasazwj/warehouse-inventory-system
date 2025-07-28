@@ -32,10 +32,7 @@ public interface OutboundOrderDetailRepository extends JpaRepository<OutboundOrd
      */
     List<OutboundOrderDetail> findByGoodsId(Long goodsId);
 
-    /**
-     * 根据批次号查找明细
-     */
-    List<OutboundOrderDetail> findByBatchNumberContaining(String batchNumber);
+
 
     /**
      * 根据出库单ID删除明细
