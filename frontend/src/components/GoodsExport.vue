@@ -14,28 +14,31 @@
     <!-- 导出设置对话框 -->
     <el-dialog
       v-model="exportDialogVisible"
-      :width="isMobile ? '95%' : '900px'"
+      :width="isMobile ? '95%' : '1000px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
       class="goods-export-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header goods-export-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><Download /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Download /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>导出货物数据</h2>
+                <p>设置导出参数并生成数据文件</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>导出货物数据</h3>
-              <p>设置导出参数并生成数据文件</p>
-            </div>
+            <el-button @click="exportDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="exportDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -739,6 +742,95 @@ const exportToCSV = () => {
       padding: 8px 12px;
       font-size: 13px;
     }
+  }
+}
+</style>
+
+<!-- 全局样式 - 货物导出对话框 -->
+<style>
+/* 货物导出对话框样式 */
+.goods-export-dialog .goods-export-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.goods-export-dialog .goods-export-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.goods-export-dialog .goods-export-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.goods-export-dialog .goods-export-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.goods-export-dialog .goods-export-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.goods-export-dialog .goods-export-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.goods-export-dialog .goods-export-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.goods-export-dialog .goods-export-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.goods-export-dialog .goods-export-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .goods-export-dialog .goods-export-header {
+    padding: 20px 16px !important;
+    margin: -20px -16px 0 -16px !important;
+  }
+
+  .goods-export-dialog .goods-export-header .title-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .goods-export-dialog .goods-export-header .title-icon .el-icon {
+    font-size: 20px !important;
+  }
+
+  .goods-export-dialog .goods-export-header .title-content h2 {
+    font-size: 20px !important;
   }
 }
 </style>

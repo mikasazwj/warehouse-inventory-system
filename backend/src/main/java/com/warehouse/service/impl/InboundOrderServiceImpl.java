@@ -419,15 +419,36 @@ public class InboundOrderServiceImpl implements InboundOrderService {
 
         // 执行入库操作
         List<InboundOrderDetail> details = inboundOrderDetailRepository.findByInboundOrderId(id);
+        System.out.println("=== 执行入库单 ===");
+        System.out.println("入库单号: " + order.getOrderNumber());
+        System.out.println("入库明细数量: " + details.size());
+
         for (InboundOrderDetail detail : details) {
-            inventoryService.inboundInventory(
-                    order.getWarehouse().getId(),
-                    detail.getGoods().getId(),
-                    detail.getQuantity(),
-                    detail.getUnitPrice(),
-                    detail.getProductionDate(),
-                    detail.getExpiryDate()
-            );
+            System.out.println("处理入库明细 - 货物ID: " + detail.getGoods().getId() +
+                             ", 数量: " + detail.getQuantity() +
+                             ", 货物名称: " + detail.getGoods().getName());
+
+            // 使用带业务类型的入库方法
+            try {
+                InventoryServiceImpl inventoryServiceImpl = (InventoryServiceImpl) inventoryService;
+                inventoryServiceImpl.inboundInventoryWithBusinessType(
+                        order.getWarehouse().getId(),
+                        detail.getGoods().getId(),
+                        detail.getQuantity(),
+                        detail.getUnitPrice(),
+                        detail.getProductionDate(),
+                        detail.getExpiryDate(),
+                        "INBOUND",  // 业务类型为入库
+                        order.getOrderNumber()  // 入库单号
+                );
+                System.out.println("入库明细处理完成 - 货物: " + detail.getGoods().getName());
+            } catch (Exception e) {
+                System.err.println("入库明细处理失败: " + e.getMessage());
+                e.printStackTrace();
+                throw e;
+            }
+
+            System.out.println("入库明细处理完成");
         }
 
         // 更新入库单状态为已执行

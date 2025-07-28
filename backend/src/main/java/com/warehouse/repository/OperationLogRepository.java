@@ -81,9 +81,8 @@ public interface OperationLogRepository extends JpaRepository<OperationLog, Long
      * 根据库存相关操作查找日志（包括入库、出库、调整）
      */
     @Query("SELECT ol FROM OperationLog ol WHERE ol.deleted = false AND " +
-           "(ol.businessType = 'INVENTORY' AND ol.businessId = :inventoryId) OR " +
-           "(ol.businessType IN ('INBOUND', 'OUTBOUND', 'ADJUST') AND " +
-           "ol.requestParams LIKE CONCAT('%inventoryId\":', :inventoryId, '%')) " +
+           "ol.businessId = :inventoryId AND " +
+           "ol.businessType IN ('INVENTORY', 'INBOUND', 'OUTBOUND', 'ADJUST', 'TRANSFER', 'STOCKTAKING') " +
            "ORDER BY ol.operationTime DESC")
     List<OperationLog> findAllInventoryRelatedLogs(@Param("inventoryId") Long inventoryId);
 

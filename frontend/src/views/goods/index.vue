@@ -290,28 +290,31 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :width="isMobile ? '95%' : '900px'"
+      :width="isMobile ? '95%' : '1000px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
       class="goods-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header goods-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>{{ dialogTitle }}</h2>
+                <p>{{ form.id ? '修改货物信息和规格' : '创建新的货物档案' }}</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>{{ dialogTitle }}</h3>
-              <p>{{ form.id ? '修改货物信息和规格' : '创建新的货物档案' }}</p>
-            </div>
+            <el-button @click="dialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="dialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -416,27 +419,30 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      :width="isMobile ? '95%' : '800px'"
+      :width="isMobile ? '95%' : '1000px'"
       :fullscreen="isMobile"
       class="goods-detail-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header goods-detail-header">
           <div class="header-content">
-            <div class="header-icon view-icon">
-              <el-icon><View /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><View /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>货物详情</h2>
+                <p>查看货物的详细信息和规格参数</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>货物详情</h3>
-              <p>查看货物的详细信息</p>
-            </div>
+            <el-button @click="viewDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="viewDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -475,27 +481,30 @@
     <!-- 分类管理对话框 -->
     <el-dialog
       v-model="categoryDialogVisible"
-      :width="isMobile ? '95%' : '700px'"
+      :width="isMobile ? '95%' : '800px'"
       :fullscreen="isMobile"
       class="category-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header category-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><FolderOpened /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><FolderOpened /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>分类管理</h2>
+                <p>管理货物分类信息和层级结构</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>分类管理</h3>
-              <p>管理货物分类信息</p>
-            </div>
+            <el-button @click="categoryDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="categoryDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -537,27 +546,30 @@
     <!-- 分类编辑对话框 -->
     <el-dialog
       v-model="categoryFormVisible"
-      :width="isMobile ? '95%' : '600px'"
+      :width="isMobile ? '95%' : '700px'"
       :fullscreen="isMobile"
       class="category-form-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header category-form-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><Plus v-if="!categoryForm.id" /><Edit v-else /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Plus v-if="!categoryForm.id" /><Edit v-else /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>{{ categoryForm.id ? '编辑分类' : '新增分类' }}</h2>
+                <p>{{ categoryForm.id ? '修改分类信息' : '创建新的分类' }}</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>{{ categoryForm.id ? '编辑分类' : '新增分类' }}</h3>
-              <p>{{ categoryForm.id ? '修改分类信息' : '创建新的分类' }}</p>
-            </div>
+            <el-button @click="categoryFormVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="categoryFormVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -596,28 +608,31 @@
     <!-- 导入数据对话框 -->
     <el-dialog
       v-model="importDialogVisible"
-      :width="isMobile ? '95%' : '900px'"
+      :width="isMobile ? '95%' : '1000px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
       class="import-dialog modern-dialog"
       :show-close="false"
       append-to-body
       :z-index="3000"
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header import-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><Upload /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Upload /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>导入货物数据</h2>
+                <p>批量导入货物信息到系统</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>导入货物数据</h3>
-              <p>批量导入货物信息到系统</p>
-            </div>
+            <el-button @click="importDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="importDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -2528,6 +2543,520 @@ onMounted(() => {
 
   .import-tips li {
     margin-bottom: 5px !important;
+  }
+}
+</style>
+
+<!-- 全局样式 - 货物管理对话框 -->
+<style>
+/* 货物新增/编辑对话框样式 */
+.goods-dialog .goods-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.goods-dialog .goods-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.goods-dialog .goods-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.goods-dialog .goods-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.goods-dialog .goods-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.goods-dialog .goods-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.goods-dialog .goods-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.goods-dialog .goods-header {
+  position: relative !important;
+}
+
+.goods-dialog .goods-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.goods-dialog .goods-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.goods-dialog .goods-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 分类管理对话框样式 */
+.category-dialog .category-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.category-dialog .category-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.category-dialog .category-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.category-dialog .category-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.category-dialog .category-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.category-dialog .category-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.category-dialog .category-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.category-dialog .category-header {
+  position: relative !important;
+}
+
+.category-dialog .category-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.category-dialog .category-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.category-dialog .category-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 分类编辑对话框样式 */
+.category-form-dialog .category-form-header {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.category-form-dialog .category-form-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.category-form-dialog .category-form-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.category-form-dialog .category-form-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.category-form-dialog .category-form-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.category-form-dialog .category-form-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.category-form-dialog .category-form-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.category-form-dialog .category-form-header {
+  position: relative !important;
+}
+
+.category-form-dialog .category-form-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.category-form-dialog .category-form-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.category-form-dialog .category-form-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 导入数据对话框样式 */
+.import-dialog .import-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.import-dialog .import-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.import-dialog .import-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.import-dialog .import-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.import-dialog .import-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.import-dialog .import-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.import-dialog .import-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.import-dialog .import-header {
+  position: relative !important;
+}
+
+.import-dialog .import-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.import-dialog .import-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.import-dialog .import-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 货物查看详情对话框样式 */
+.goods-detail-dialog .goods-detail-header {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.goods-detail-dialog .goods-detail-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.goods-detail-dialog .goods-detail-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.goods-detail-dialog .goods-detail-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.goods-detail-dialog .goods-detail-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.goods-detail-dialog .goods-detail-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.goods-detail-dialog .goods-detail-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.goods-detail-dialog .goods-detail-header {
+  position: relative !important;
+}
+
+.goods-detail-dialog .goods-detail-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.goods-detail-dialog .goods-detail-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.goods-detail-dialog .goods-detail-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 货物详情内容区域样式 */
+.goods-detail-dialog .dialog-body {
+  padding: 32px 0 !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+.goods-detail-dialog .detail-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+.goods-detail-dialog .info-card {
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid #f1f5f9 !important;
+  overflow: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.goods-detail-dialog .info-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.goods-detail-dialog .info-card .card-header {
+  padding: 20px 24px 16px 24px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+}
+
+.goods-detail-dialog .info-card .card-header .el-icon {
+  font-size: 20px !important;
+  color: #8b5cf6 !important;
+}
+
+.goods-detail-dialog .info-card .card-content {
+  padding: 24px !important;
+}
+
+/* 美化描述列表 */
+.goods-detail-dialog .el-descriptions {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.goods-detail-dialog .el-descriptions__header {
+  background: #f8fafc !important;
+  padding: 16px !important;
+}
+
+.goods-detail-dialog .el-descriptions__body {
+  background: white !important;
+}
+
+.goods-detail-dialog .el-descriptions__table {
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+}
+
+.goods-detail-dialog .el-descriptions__cell {
+  border: 1px solid #e2e8f0 !important;
+  padding: 12px 16px !important;
+}
+
+.goods-detail-dialog .el-descriptions__label {
+  background: #f8fafc !important;
+  font-weight: 600 !important;
+  color: #374151 !important;
+  width: 120px !important;
+}
+
+.goods-detail-dialog .el-descriptions__content {
+  background: white !important;
+  color: #1e293b !important;
+  font-weight: 500 !important;
+}
+
+/* 状态标签样式 */
+.goods-detail-dialog .status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.goods-detail-dialog .status-badge.enabled {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+  color: #15803d !important;
+  border: 1px solid #22c55e !important;
+}
+
+.goods-detail-dialog .status-badge.disabled {
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+  color: #dc2626 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+.goods-detail-dialog .status-badge .el-icon {
+  font-size: 14px !important;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .goods-detail-dialog .dialog-body {
+    padding: 24px 0 !important;
+  }
+
+  .goods-detail-dialog .detail-content {
+    gap: 16px !important;
+  }
+
+  .goods-detail-dialog .info-card .card-content {
+    padding: 16px !important;
+  }
+
+  .goods-detail-dialog .el-descriptions__label {
+    width: 100px !important;
+  }
+
+  .goods-detail-dialog .el-descriptions__cell {
+    padding: 8px 12px !important;
   }
 }
 </style>

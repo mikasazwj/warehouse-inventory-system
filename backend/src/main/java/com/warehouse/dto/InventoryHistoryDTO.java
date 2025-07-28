@@ -38,6 +38,12 @@ public class InventoryHistoryDTO {
 
     private String remark;
 
+    // 关联单据号
+    private String relatedOrderNumber;
+
+    // 业务类型
+    private String businessType;
+
     // 关联信息
     private String warehouseName;
     private String goodsName;
@@ -165,6 +171,22 @@ public class InventoryHistoryDTO {
 
     public void setGoodsCode(String goodsCode) {
         this.goodsCode = goodsCode;
+    }
+
+    public String getRelatedOrderNumber() {
+        return relatedOrderNumber;
+    }
+
+    public void setRelatedOrderNumber(String relatedOrderNumber) {
+        this.relatedOrderNumber = relatedOrderNumber;
+    }
+
+    public String getBusinessType() {
+        return businessType;
+    }
+
+    public void setBusinessType(String businessType) {
+        this.businessType = businessType;
     }
 
     @Override

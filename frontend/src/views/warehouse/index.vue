@@ -249,26 +249,30 @@
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :width="isMobile ? '95%' : '700px'"
+      :width="isMobile ? '95%' : '800px'"
       :close-on-click-modal="false"
       :fullscreen="isMobile"
       class="warehouse-dialog modern-dialog"
       :show-close="false"
+      append-to-body
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header warehouse-header">
           <div class="header-content">
-            <div class="header-icon">
-              <el-icon><component :is="form.id ? 'Edit' : 'Plus'" /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><component :is="form.id ? 'Edit' : 'Plus'" /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>{{ dialogTitle }}</h2>
+                <p>{{ form.id ? '修改仓库信息' : '创建新的仓库' }}</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>{{ dialogTitle }}</h3>
-              <p>{{ form.id ? '修改仓库信息' : '创建新的仓库' }}</p>
-            </div>
+            <el-button @click="dialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="dialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -395,25 +399,29 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      :width="isMobile ? '95%' : '700px'"
+      :width="isMobile ? '95%' : '800px'"
       :fullscreen="isMobile"
       class="warehouse-view-dialog modern-dialog"
       :show-close="false"
+      append-to-body
+      destroy-on-close
     >
       <template #header>
-        <div class="dialog-header">
+        <div class="dialog-header warehouse-view-header">
           <div class="header-content">
-            <div class="header-icon view-icon">
-              <el-icon><View /></el-icon>
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><View /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>仓库详情</h2>
+                <p>查看仓库的详细信息</p>
+              </div>
             </div>
-            <div class="header-text">
-              <h3>仓库详情</h3>
-              <p>查看仓库的详细信息</p>
-            </div>
+            <el-button @click="viewDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
           </div>
-          <el-button type="text" @click="viewDialogVisible = false" class="close-btn">
-            <el-icon><Close /></el-icon>
-          </el-button>
         </div>
       </template>
 
@@ -1744,6 +1752,326 @@ onMounted(() => {
         }
       }
     }
+  }
+}
+</style>
+
+<!-- 全局样式 - 仓库管理对话框 -->
+<style>
+/* 仓库新增/编辑对话框样式 - 加强优先级 */
+.el-dialog.warehouse-dialog .warehouse-header,
+.warehouse-dialog .el-dialog__header .warehouse-header,
+.warehouse-dialog .warehouse-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.warehouse-dialog .warehouse-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.warehouse-dialog .warehouse-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.warehouse-dialog .warehouse-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.warehouse-dialog .warehouse-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.warehouse-dialog .warehouse-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.warehouse-dialog .warehouse-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.warehouse-dialog .warehouse-header {
+  position: relative !important;
+}
+
+.warehouse-dialog .warehouse-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.warehouse-dialog .warehouse-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.warehouse-dialog .warehouse-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 仓库查看详情对话框样式 - 加强优先级 */
+.el-dialog.warehouse-view-dialog .warehouse-view-header,
+.warehouse-view-dialog .el-dialog__header .warehouse-view-header,
+.warehouse-view-dialog .warehouse-view-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .header-content,
+.warehouse-view-dialog .warehouse-view-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .dialog-title,
+.warehouse-view-dialog .warehouse-view-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .title-icon,
+.warehouse-view-dialog .warehouse-view-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .title-icon .el-icon,
+.warehouse-view-dialog .warehouse-view-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .title-content h2,
+.warehouse-view-dialog .warehouse-view-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .title-content p,
+.warehouse-view-dialog .warehouse-view-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.warehouse-view-dialog .warehouse-view-header {
+  position: relative !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .header-content,
+.warehouse-view-dialog .warehouse-view-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .dialog-close,
+.warehouse-view-dialog .warehouse-view-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.el-dialog.warehouse-view-dialog .warehouse-view-header .dialog-close:hover,
+.warehouse-view-dialog .warehouse-view-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 强制覆盖Element Plus默认样式 */
+.el-dialog__header {
+  padding: 0 !important;
+  border-bottom: none !important;
+}
+
+.warehouse-view-dialog .el-dialog__header,
+.warehouse-dialog .el-dialog__header {
+  padding: 0 !important;
+  border-bottom: none !important;
+  background: transparent !important;
+}
+
+/* 确保对话框头部样式生效 */
+.warehouse-view-dialog .dialog-header,
+.warehouse-dialog .dialog-header {
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* 仓库详情内容区域样式 */
+.warehouse-view-dialog .dialog-body {
+  padding: 32px 0 !important;
+  max-height: 70vh !important;
+  overflow-y: auto !important;
+}
+
+.warehouse-view-dialog .detail-content {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+.warehouse-view-dialog .info-card {
+  background: white !important;
+  border-radius: 16px !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+  border: 1px solid #f1f5f9 !important;
+  overflow: hidden !important;
+  transition: all 0.3s ease !important;
+}
+
+.warehouse-view-dialog .info-card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12) !important;
+}
+
+.warehouse-view-dialog .info-card .card-header {
+  padding: 20px 24px 16px 24px !important;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+}
+
+.warehouse-view-dialog .info-card .card-header .el-icon {
+  font-size: 20px !important;
+  color: #3b82f6 !important;
+}
+
+.warehouse-view-dialog .info-card .card-content {
+  padding: 24px !important;
+}
+
+.warehouse-view-dialog .info-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)) !important;
+  gap: 20px !important;
+}
+
+.warehouse-view-dialog .info-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.warehouse-view-dialog .info-item.full-width {
+  grid-column: 1 / -1 !important;
+}
+
+.warehouse-view-dialog .info-item .info-label {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  color: #64748b !important;
+}
+
+.warehouse-view-dialog .info-item .info-label .el-icon {
+  font-size: 16px !important;
+  color: #6b7280 !important;
+}
+
+.warehouse-view-dialog .info-item .info-value {
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #1e293b !important;
+  padding: 8px 12px !important;
+  background: #f8fafc !important;
+  border-radius: 8px !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.warehouse-view-dialog .status-item .status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  padding: 6px 12px !important;
+  border-radius: 20px !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.warehouse-view-dialog .status-item .status-badge.enabled {
+  background: linear-gradient(135deg, #dcfce7, #bbf7d0) !important;
+  color: #15803d !important;
+  border: 1px solid #22c55e !important;
+}
+
+.warehouse-view-dialog .status-item .status-badge.disabled {
+  background: linear-gradient(135deg, #fee2e2, #fecaca) !important;
+  color: #dc2626 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+.warehouse-view-dialog .status-item .status-badge .el-icon {
+  font-size: 14px !important;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .warehouse-view-dialog .dialog-body {
+    padding: 24px 0 !important;
+  }
+
+  .warehouse-view-dialog .detail-content {
+    gap: 16px !important;
+  }
+
+  .warehouse-view-dialog .info-card .card-content {
+    padding: 16px !important;
+  }
+
+  .warehouse-view-dialog .info-grid {
+    grid-template-columns: 1fr !important;
+    gap: 16px !important;
   }
 }
 </style>

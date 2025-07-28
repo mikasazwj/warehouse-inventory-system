@@ -375,21 +375,25 @@ public class TransferOrderServiceImpl implements TransferOrderService {
 
                 inventoryService.unlockInventory(unlockRequest);
 
-                // 从源仓库出库
-                inventoryService.outboundInventory(
+                // 从源仓库出库（使用带业务类型的方法）
+                ((InventoryServiceImpl) inventoryService).outboundInventoryWithBusinessType(
                         order.getFromWarehouse().getId(),
                         detail.getGoods().getId(),
-                        detail.getQuantity()
+                        detail.getQuantity(),
+                        "TRANSFER",  // 业务类型为调拨
+                        order.getOrderNumber()  // 调拨单号
                 );
 
-                // 向目标仓库入库
-                inventoryService.inboundInventory(
+                // 向目标仓库入库（使用带业务类型的方法）
+                ((InventoryServiceImpl) inventoryService).inboundInventoryWithBusinessType(
                         order.getToWarehouse().getId(),
                         detail.getGoods().getId(),
                         detail.getQuantity(),
                         detail.getUnitPrice(), // 使用调拨单价
                         null, // 调拨不涉及生产日期
-                        null  // 调拨不涉及过期日期
+                        null, // 调拨不涉及过期日期
+                        "TRANSFER",  // 业务类型为调拨
+                        order.getOrderNumber()  // 调拨单号
                 );
             } else {
                 throw new BusinessException("源仓库货物 " + detail.getGoods().getName() + " 库存记录不存在，无法执行调拨");
