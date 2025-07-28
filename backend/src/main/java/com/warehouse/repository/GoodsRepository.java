@@ -1,6 +1,7 @@
 package com.warehouse.repository;
 
 import com.warehouse.entity.Goods;
+import com.warehouse.entity.GoodsCategory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -50,6 +51,26 @@ public interface GoodsRepository extends JpaRepository<Goods, Long> {
      * 检查编码是否存在
      */
     boolean existsByCodeAndDeletedFalse(String code);
+
+    /**
+     * 根据货物名称、分类、规格查找货物（用于导入时检查重复）
+     */
+    Optional<Goods> findByNameAndCategoryAndSpecificationAndDeletedFalse(String name, GoodsCategory category, String specification);
+
+    /**
+     * 根据货物名称、分类、规格查找已删除的货物
+     */
+    Optional<Goods> findByNameAndCategoryAndSpecificationAndDeletedTrue(String name, GoodsCategory category, String specification);
+
+    /**
+     * 查找所有已删除的货物
+     */
+    List<Goods> findByDeletedTrue();
+
+    /**
+     * 查找所有未删除的货物
+     */
+    List<Goods> findByDeletedFalse();
 
     /**
      * 检查条形码是否存在

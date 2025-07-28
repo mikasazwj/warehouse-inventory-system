@@ -1,149 +1,324 @@
 <template>
-  <div class="page-container">
+  <div class="goods-management">
+    <!-- 页面头部 -->
     <div class="page-header">
-      <h1 class="page-title">货物管理</h1>
-      <div class="page-actions">
-        <el-button @click="categoryDialogVisible = true">
-          <el-icon><Collection /></el-icon>
-          分类管理
-        </el-button>
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
-          新增货物
-        </el-button>
+      <div class="header-content">
+        <div class="header-left">
+          <h1 class="page-title">
+            <el-icon class="title-icon"><Box /></el-icon>
+            货物管理
+          </h1>
+          <p class="page-subtitle">管理系统中的所有货物信息和分类</p>
+        </div>
+        <div class="header-actions" :class="{ 'mobile-actions': isMobile }">
+          <el-button @click="categoryDialogVisible = true" :size="isMobile ? 'small' : 'default'">
+            <el-icon><Collection /></el-icon>
+            分类管理
+          </el-button>
+          <el-button type="primary" @click="handleAdd" :size="isMobile ? 'small' : 'default'">
+            <el-icon><Plus /></el-icon>
+            新增货物
+          </el-button>
+          <el-button @click="importDialogVisible = true" :size="isMobile ? 'small' : 'default'">
+            <el-icon><Upload /></el-icon>
+            导入数据
+          </el-button>
+          <el-button @click="handleExport" :size="isMobile ? 'small' : 'default'">
+            <el-icon><Download /></el-icon>
+            导出数据
+          </el-button>
+        </div>
       </div>
     </div>
 
-    <!-- 搜索表单 -->
-    <div class="search-form">
-      <el-form :model="searchForm" inline>
-        <el-form-item label="货物名称">
-          <el-input
-            v-model="searchForm.keyword"
-            placeholder="请输入货物名称或编码"
-            clearable
-            style="width: 200px"
-          />
-        </el-form-item>
-        <el-form-item label="分类">
-          <el-select v-model="searchForm.categoryId" placeholder="请选择分类" clearable style="width: 150px">
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="searchForm.enabled" placeholder="请选择状态" clearable style="width: 120px">
-            <el-option label="启用" :value="true" />
-            <el-option label="禁用" :value="false" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">
-            <el-icon><Search /></el-icon>
-            搜索
-          </el-button>
-          <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>
-            重置
-          </el-button>
-        </el-form-item>
-      </el-form>
+    <!-- 搜索和统计区域 -->
+    <div class="search-section">
+      <div class="search-card">
+        <div class="search-header">
+          <h3>筛选条件</h3>
+          <div class="search-stats">
+            <span class="stat-item">
+              <el-icon><Box /></el-icon>
+              总计：{{ pagination.total }} 个货物
+            </span>
+            <span class="stat-item">
+              <el-icon><CircleCheck /></el-icon>
+              启用：{{ enabledCount }} 个
+            </span>
+            <span class="stat-item">
+              <el-icon><CircleClose /></el-icon>
+              禁用：{{ disabledCount }} 个
+            </span>
+          </div>
+        </div>
+        <el-form :model="searchForm" class="search-form" :class="{ 'mobile-form': isMobile }">
+          <div class="form-content">
+            <div class="search-inputs">
+              <el-form-item label="名称" class="search-item">
+                <el-input
+                  v-model="searchForm.keyword"
+                  placeholder="请输入货物名称或编码"
+                  clearable
+                  prefix-icon="Search"
+                  class="search-input"
+                />
+              </el-form-item>
+              <el-form-item label="分类" class="search-item">
+                <el-select v-model="searchForm.categoryId" placeholder="请选择分类" clearable class="search-select">
+                  <el-option
+                    v-for="category in categories"
+                    :key="category.id"
+                    :label="category.name"
+                    :value="category.id"
+                  >
+                    <el-icon><Collection /></el-icon>
+                    {{ category.name }}
+                  </el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="状态" class="search-item">
+                <el-select v-model="searchForm.enabled" placeholder="请选择状态" clearable class="search-select">
+                  <el-option label="启用" :value="true">
+                    <el-icon><CircleCheck /></el-icon>
+                    启用
+                  </el-option>
+                  <el-option label="禁用" :value="false">
+                    <el-icon><CircleClose /></el-icon>
+                    禁用
+                  </el-option>
+                </el-select>
+              </el-form-item>
+            </div>
+            <div class="search-actions">
+              <el-button type="primary" @click="handleSearch">
+                <el-icon><Search /></el-icon>
+                <span v-if="!isMobile">搜索</span>
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                <span v-if="!isMobile">重置</span>
+              </el-button>
+            </div>
+          </div>
+        </el-form>
+      </div>
     </div>
 
     <!-- 数据表格 -->
-    <div class="data-table">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        border
-        style="width: 100%"
-      >
-        <el-table-column prop="code" label="货物编码" min-width="120" />
-        <el-table-column prop="name" label="货物名称" min-width="150" />
-        <el-table-column prop="categoryName" label="分类" min-width="120" />
-        <el-table-column prop="unit" label="单位" width="80" />
-        <el-table-column prop="specification" label="规格/型号" min-width="120" />
-
-        <el-table-column label="状态" width="80">
-          <template #default="{ row }">
-            <el-tag :type="row.enabled ? 'success' : 'danger'">
-              {{ row.enabled ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="createdTime" label="创建时间" min-width="160">
-          <template #default="{ row }">
-            {{ formatDateTime(row.createdTime) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="280" fixed="right" align="center">
-          <template #default="{ row }">
-            <div style="display: flex; gap: 4px; justify-content: center; flex-wrap: nowrap;">
-              <el-button type="primary" size="small" @click="handleView(row)">
-                <el-icon><View /></el-icon>
-                查看
-              </el-button>
-              <el-button type="warning" size="small" @click="handleEdit(row)">
-                <el-icon><Edit /></el-icon>
-                编辑
-              </el-button>
-              <el-button
-                :type="row.enabled ? 'danger' : 'success'"
-                size="small"
-                @click="handleToggleStatus(row)"
+    <div class="table-section">
+      <div class="table-card">
+        <div class="table-header">
+          <h3>货物列表</h3>
+          <div class="table-actions">
+            <el-button size="small" @click="handleRefresh">
+              <el-icon><Refresh /></el-icon>
+              刷新
+            </el-button>
+          </div>
+        </div>
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          stripe
+          class="goods-table"
+          empty-text="暂无货物数据"
+          :header-cell-style="{ background: '#f8f9fa', color: '#606266', fontWeight: '600' }"
+        >
+          <el-table-column prop="code" label="货物编码" width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="code-cell">
+                <el-icon class="code-icon"><Postcard /></el-icon>
+                <span class="code-text">{{ row.code }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="name" label="货物名称" min-width="150" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="name-cell">
+                <el-icon class="name-icon"><Box /></el-icon>
+                <span class="name-text">{{ row.name }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="categoryName" label="分类" width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="category-cell">
+                <el-icon class="category-icon"><Collection /></el-icon>
+                <span class="category-text">{{ row.categoryName || '-' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="unit" label="单位" width="80" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="unit-cell">
+                <el-icon class="unit-icon"><Scale /></el-icon>
+                <span class="unit-text">{{ row.unit || '-' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column prop="specification" label="规格/型号" min-width="120" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="spec-cell">
+                <el-icon class="spec-icon"><Document /></el-icon>
+                <span class="spec-text">{{ row.specification || '-' }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="库存信息" width="120" align="center">
+            <template #default="{ row }">
+              <div class="stock-cell">
+                <div class="stock-info">
+                  <span class="stock-label">最小库存</span>
+                  <span class="stock-value">{{ row.minStock || 0 }}</span>
+                </div>
+                <div class="stock-info">
+                  <span class="stock-label">最大库存</span>
+                  <span class="stock-value">{{ row.maxStock || 0 }}</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100" align="center">
+            <template #default="{ row }">
+              <el-tag
+                :type="row.enabled ? 'success' : 'danger'"
+                effect="dark"
+                class="status-tag"
               >
-                <el-icon><Switch /></el-icon>
-                {{ row.enabled ? '禁用' : '启用' }}
-              </el-button>
-            </div>
-          </template>
-        </el-table-column>
-      </el-table>
+                <div class="status-content">
+                  <el-icon><component :is="row.enabled ? 'CircleCheck' : 'CircleClose'" /></el-icon>
+                  <span>{{ row.enabled ? '启用' : '禁用' }}</span>
+                </div>
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdTime" label="创建时间" width="160" show-overflow-tooltip>
+            <template #default="{ row }">
+              <div class="time-cell">
+                <el-icon class="time-icon"><Clock /></el-icon>
+                <span class="time-text">{{ formatDateTime(row.createdTime) }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" :width="isMobile ? 80 : undefined" :min-width="isMobile ? 80 : 280" fixed="right" align="center">
+            <template #default="{ row }">
+              <!-- 桌面端按钮组 -->
+              <div class="action-buttons desktop-actions">
+                <el-button type="primary" size="small" @click="handleView(row)" class="action-btn">
+                  <el-icon><View /></el-icon>
+                  <span class="btn-text">查看</span>
+                </el-button>
+                <el-button type="warning" size="small" @click="handleEdit(row)" class="action-btn">
+                  <el-icon><Edit /></el-icon>
+                  <span class="btn-text">编辑</span>
+                </el-button>
+                <el-button
+                  :type="row.enabled ? 'danger' : 'success'"
+                  size="small"
+                  @click="handleToggleStatus(row)"
+                  class="action-btn"
+                >
+                  <el-icon><Switch /></el-icon>
+                  <span class="btn-text">{{ row.enabled ? '禁用' : '启用' }}</span>
+                </el-button>
+                <el-button
+                  type="danger"
+                  size="small"
+                  @click="handleDelete(row)"
+                  :disabled="!row.enabled"
+                  class="action-btn"
+                >
+                  <el-icon><Delete /></el-icon>
+                  <span class="btn-text">删除</span>
+                </el-button>
+              </div>
 
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+              <!-- 移动端下拉菜单 -->
+              <div class="mobile-actions">
+                <el-dropdown trigger="click" @command="(command) => handleMobileAction(command, row)">
+                  <el-button type="primary" size="small">
+                    操作
+                    <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                  </el-button>
+                  <template #dropdown>
+                    <el-dropdown-menu>
+                      <el-dropdown-item command="view">
+                        <el-icon><View /></el-icon>
+                        查看详情
+                      </el-dropdown-item>
+                      <el-dropdown-item command="edit">
+                        <el-icon><Edit /></el-icon>
+                        编辑信息
+                      </el-dropdown-item>
+                      <el-dropdown-item command="toggle">
+                        <el-icon><Switch /></el-icon>
+                        {{ row.enabled ? '禁用货物' : '启用货物' }}
+                      </el-dropdown-item>
+                      <el-dropdown-item command="delete" :disabled="!row.enabled" divided>
+                        <el-icon><Delete /></el-icon>
+                        删除货物
+                      </el-dropdown-item>
+                    </el-dropdown-menu>
+                  </template>
+                </el-dropdown>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 分页 -->
+        <div class="pagination-container">
+          <el-pagination
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="isMobile ? [5, 10, 20] : [10, 20, 50, 100]"
+            :layout="isMobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'"
+            :small="isMobile"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            class="goods-pagination"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
       :title="dialogTitle"
-      width="700px"
+      :width="isMobile ? '95%' : '700px'"
       :close-on-click-modal="false"
+      :fullscreen="isMobile"
+      class="goods-dialog"
     >
       <el-form
         ref="formRef"
         :model="form"
         :rules="formRules"
-        label-width="100px"
+        :label-width="isMobile ? '80px' : '100px'"
+        :label-position="isMobile ? 'top' : 'right'"
       >
-        <el-row :gutter="20">
-          <el-col :span="12">
+        <el-row :gutter="isMobile ? 10 : 20">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="货物编码" prop="code">
-              <el-input v-model="form.code" placeholder="请输入货物编码" />
+              <el-input
+                v-model="form.code"
+                placeholder="系统自动生成"
+                readonly
+                disabled
+                style="background-color: #f5f7fa;"
+              />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="货物名称" prop="name">
               <el-input v-model="form.name" placeholder="请输入货物名称" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
+        <el-row :gutter="isMobile ? 10 : 20">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="分类" prop="categoryId">
               <el-select v-model="form.categoryId" placeholder="请选择分类" style="width: 100%">
                 <el-option
@@ -155,19 +330,19 @@
               </el-select>
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="规格/型号" prop="specification">
               <el-input v-model="form.specification" placeholder="请输入规格/型号" />
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
+        <el-row :gutter="isMobile ? 10 : 20">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="单位" prop="unit">
               <el-input v-model="form.unit" placeholder="如：个、箱、kg" />
             </el-form-item>
           </el-col>
-          <el-col :span="8">
+          <el-col :span="isMobile ? 24 : 8">
             <el-form-item label="状态" prop="enabled">
               <el-switch
                 v-model="form.enabled"
@@ -177,13 +352,13 @@
             </el-form-item>
           </el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
+        <el-row :gutter="isMobile ? 10 : 20">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="最低库存" prop="minStock">
               <el-input-number v-model="form.minStock" :min="0" style="width: 100%" />
             </el-form-item>
           </el-col>
-          <el-col :span="12">
+          <el-col :span="isMobile ? 24 : 12">
             <el-form-item label="最高库存" prop="maxStock">
               <el-input-number v-model="form.maxStock" :min="0" style="width: 100%" />
             </el-form-item>
@@ -210,10 +385,12 @@
     <el-dialog
       v-model="viewDialogVisible"
       title="货物详情"
-      width="600px"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
+      class="goods-detail-dialog"
     >
       <div class="detail-content" v-if="viewData">
-        <el-descriptions :column="2" border>
+        <el-descriptions :column="isMobile ? 1 : 2" border>
           <el-descriptions-item label="货物编码">{{ viewData.code }}</el-descriptions-item>
           <el-descriptions-item label="货物名称">{{ viewData.name }}</el-descriptions-item>
           <el-descriptions-item label="分类">{{ viewData.categoryName }}</el-descriptions-item>
@@ -237,7 +414,9 @@
     <el-dialog
       v-model="categoryDialogVisible"
       title="分类管理"
-      width="500px"
+      :width="isMobile ? '95%' : '500px'"
+      :fullscreen="isMobile"
+      class="category-dialog"
     >
       <div class="category-management">
         <div class="category-header">
@@ -269,9 +448,17 @@
     <el-dialog
       v-model="categoryFormVisible"
       :title="categoryForm.id ? '编辑分类' : '新增分类'"
-      width="400px"
+      :width="isMobile ? '95%' : '400px'"
+      :fullscreen="isMobile"
+      class="category-form-dialog"
     >
-      <el-form :model="categoryForm" :rules="categoryRules" ref="categoryFormRef" label-width="80px">
+      <el-form
+        :model="categoryForm"
+        :rules="categoryRules"
+        ref="categoryFormRef"
+        :label-width="isMobile ? '70px' : '80px'"
+        :label-position="isMobile ? 'top' : 'right'"
+      >
         <el-form-item label="分类编码" prop="code">
           <el-input v-model="categoryForm.code" placeholder="请输入分类编码" :disabled="!!categoryForm.id" />
         </el-form-item>
@@ -287,6 +474,170 @@
         <el-button type="primary" @click="handleSubmitCategory">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 导入数据对话框 -->
+    <el-dialog
+      v-model="importDialogVisible"
+      title="导入货物数据"
+      :width="isMobile ? '95%' : '600px'"
+      :close-on-click-modal="false"
+      :fullscreen="isMobile"
+      class="import-dialog"
+    >
+      <div class="import-content">
+        <!-- 步骤指示器 -->
+        <el-steps :active="importStep" finish-status="success" align-center class="import-steps">
+          <el-step title="选择文件" />
+          <el-step title="数据预览" />
+          <el-step title="导入完成" />
+        </el-steps>
+
+        <!-- 步骤1: 文件选择 -->
+        <div v-if="importStep === 0" class="step-content">
+          <div class="upload-area">
+            <el-upload
+              ref="uploadRef"
+              class="upload-dragger"
+              drag
+              :auto-upload="false"
+              :limit="1"
+              :on-change="handleFileChange"
+              :on-exceed="handleExceed"
+              accept=".xlsx,.xls"
+            >
+              <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+              <div class="el-upload__text">
+                将Excel文件拖到此处，或<em>点击上传</em>
+              </div>
+              <template #tip>
+                <div class="el-upload__tip">
+                  只能上传 .xlsx/.xls 文件，且不超过 10MB
+                </div>
+              </template>
+            </el-upload>
+          </div>
+
+          <!-- 模板下载 -->
+          <div class="template-section">
+            <el-divider content-position="center">或</el-divider>
+            <div class="template-download">
+              <el-icon><Document /></el-icon>
+              <span>没有模板？</span>
+              <el-button type="primary" link @click="downloadTemplate">
+                下载导入模板
+              </el-button>
+            </div>
+          </div>
+
+          <!-- 导入说明 -->
+          <div class="import-tips">
+            <h4>导入说明：</h4>
+            <ul>
+              <li>支持 Excel 格式文件（.xlsx, .xls）</li>
+              <li>第一行必须是表头，包含：货物名称、分类编码、单位、规格/型号、最小库存、最大库存、描述</li>
+              <li><strong>货物名称 + 分类 + 规格/型号</strong> 完全相同的货物会被跳过</li>
+              <li>如果分类编码不存在，系统会自动创建该分类</li>
+              <li>货物编码由系统自动生成，无需手动填写</li>
+              <li>最小库存和最大库存必须是数字</li>
+              <li>单次最多导入 1000 条数据</li>
+              <li><em>示例：相同名称的货物可以有不同规格，如"iPhone15 128G黑色"和"iPhone15 256G白色"</em></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 步骤2: 数据预览 -->
+        <div v-if="importStep === 1" class="step-content">
+          <div class="preview-info">
+            <el-alert
+              :title="`共解析到 ${previewData.length} 条数据，请确认后导入`"
+              type="info"
+              :closable="false"
+              show-icon
+            />
+          </div>
+
+          <div class="preview-table">
+            <el-table
+              :data="previewData.slice(0, 10)"
+              border
+              size="small"
+              max-height="300"
+              style="width: 100%"
+            >
+              <el-table-column prop="code" label="货物编码" width="120" />
+              <el-table-column prop="name" label="货物名称" width="150" />
+              <el-table-column prop="categoryCode" label="分类编码" width="100" />
+              <el-table-column prop="unit" label="单位" width="80" />
+              <el-table-column prop="specification" label="规格/型号" width="120" />
+              <el-table-column prop="minStock" label="最小库存" width="100" />
+              <el-table-column prop="maxStock" label="最大库存" width="100" />
+              <el-table-column prop="description" label="描述" min-width="120" show-overflow-tooltip />
+            </el-table>
+          </div>
+
+          <div v-if="previewData.length > 10" class="preview-more">
+            <el-text type="info">仅显示前10条数据，共 {{ previewData.length }} 条</el-text>
+          </div>
+        </div>
+
+        <!-- 步骤3: 导入结果 -->
+        <div v-if="importStep === 2" class="step-content">
+          <div class="import-result">
+            <el-result
+              :icon="importResult.success ? 'success' : 'error'"
+              :title="importResult.success ? '导入成功' : '导入失败'"
+              :sub-title="importResult.message"
+            >
+              <template #extra>
+                <div v-if="importResult.success" class="result-stats">
+                  <el-statistic title="成功导入" :value="importResult.successCount" />
+                  <el-statistic v-if="importResult.failCount > 0" title="失败数量" :value="importResult.failCount" />
+                  <el-statistic v-if="importResult.warnings && importResult.warnings.length > 0" title="警告数量" :value="importResult.warnings.length" />
+                </div>
+
+                <div v-if="importResult.warnings && importResult.warnings.length > 0" class="warning-list">
+                  <h4>警告信息：</h4>
+                  <el-scrollbar max-height="150px">
+                    <ul>
+                      <li v-for="(warning, index) in importResult.warnings" :key="index" class="warning-item">
+                        第 {{ warning.row }} 行：{{ warning.message }}
+                      </li>
+                    </ul>
+                  </el-scrollbar>
+                </div>
+
+                <div v-if="importResult.errors && importResult.errors.length > 0" class="error-list">
+                  <h4>错误详情：</h4>
+                  <el-scrollbar max-height="200px">
+                    <ul>
+                      <li v-for="(error, index) in importResult.errors" :key="index" class="error-item">
+                        第 {{ error.row }} 行：{{ error.message }}
+                      </li>
+                    </ul>
+                  </el-scrollbar>
+                </div>
+              </template>
+            </el-result>
+          </div>
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="handleImportCancel">取消</el-button>
+          <el-button v-if="importStep === 0" type="primary" @click="handleFileUpload" :disabled="!selectedFile">
+            解析文件
+          </el-button>
+          <el-button v-if="importStep === 1" @click="importStep = 0">上一步</el-button>
+          <el-button v-if="importStep === 1" type="primary" @click="handleImportConfirm" :loading="importLoading">
+            确认导入
+          </el-button>
+          <el-button v-if="importStep === 2" type="primary" @click="handleImportFinish">
+            完成
+          </el-button>
+        </div>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -295,6 +646,11 @@ import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { request } from '@/utils/request'
 import dayjs from 'dayjs'
+import { useDeviceDetection } from '@/utils/responsive'
+import * as XLSX from 'xlsx'
+
+// 响应式检测
+const { isMobile, isTablet, isDesktop } = useDeviceDetection()
 
 // 响应式数据
 const loading = ref(false)
@@ -303,12 +659,34 @@ const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
 const categoryDialogVisible = ref(false)
 const categoryFormVisible = ref(false)
+const importDialogVisible = ref(false)
 const tableData = ref([])
 const viewData = ref(null)
 const categories = ref([])
 
 const formRef = ref()
 const categoryFormRef = ref()
+const uploadRef = ref()
+
+// 导入相关数据
+const importStep = ref(0)
+const importLoading = ref(false)
+const selectedFile = ref(null)
+const previewData = ref([])
+const importResult = ref({
+  success: false,
+  message: '',
+  successCount: 0,
+  failCount: 0,
+  errors: [],
+  warnings: []
+})
+
+
+
+// 统计数据
+const enabledCount = computed(() => tableData.value.filter(item => item.enabled).length)
+const disabledCount = computed(() => tableData.value.filter(item => !item.enabled).length)
 
 // 搜索表单
 const searchForm = reactive({
@@ -348,10 +726,6 @@ const categoryForm = reactive({
 
 // 表单验证规则
 const formRules = {
-  code: [
-    { required: true, message: '请输入货物编码', trigger: 'blur' },
-    { min: 2, max: 20, message: '编码长度在 2 到 20 个字符', trigger: 'blur' }
-  ],
   name: [
     { required: true, message: '请输入货物名称', trigger: 'blur' },
     { min: 2, max: 50, message: '名称长度在 2 到 50 个字符', trigger: 'blur' }
@@ -455,6 +829,8 @@ const handleCurrentChange = (page) => {
 
 const handleAdd = () => {
   resetForm()
+  // 为新增货物自动生成编码
+  form.code = 'GOODS' + Date.now()
   dialogVisible.value = true
 }
 
@@ -495,7 +871,7 @@ const handleSubmit = async () => {
     await formRef.value.validate()
     
     submitLoading.value = true
-    const url = form.id ? `/goods/${form.id}` : '/goods'
+    const url = form.id ? `/goods/${form.id}` : '/goods/create'
     const method = form.id ? 'put' : 'post'
     
     const response = await request[method](url, form)
@@ -511,13 +887,139 @@ const handleSubmit = async () => {
   }
 }
 
+const handleDelete = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要删除货物"${row.name}"吗？删除后不可恢复！`,
+      '危险操作',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'error',
+        confirmButtonClass: 'el-button--danger'
+      }
+    )
+
+    const response = await request.delete(`/goods/${row.id}`)
+    if (response.success) {
+      ElMessage.success('删除成功')
+      loadData()
+    } else {
+      ElMessage.error(response.message || '删除失败')
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+const handleMobileAction = (command, row) => {
+  switch (command) {
+    case 'view':
+      handleView(row)
+      break
+    case 'edit':
+      handleEdit(row)
+      break
+    case 'toggle':
+      handleToggleStatus(row)
+      break
+    case 'delete':
+      handleDelete(row)
+      break
+  }
+}
+
+const handleExport = async () => {
+  try {
+    ElMessage.info('正在导出数据...')
+
+    if (tableData.value.length === 0) {
+      ElMessage.warning('暂无数据可导出')
+      return
+    }
+
+    // 尝试后端导出
+    try {
+      const params = {
+        keyword: searchForm.keyword || undefined,
+        categoryId: searchForm.categoryId,
+        enabled: searchForm.enabled
+      }
+
+      const response = await request.download('/goods/export', params)
+
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+      const url = window.URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `货物数据_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      window.URL.revokeObjectURL(url)
+
+      ElMessage.success('导出成功')
+    } catch (apiError) {
+      console.log('后端导出接口不可用，使用前端导出')
+      exportToCSV()
+    }
+  } catch (error) {
+    console.error('导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
+
+const exportToCSV = () => {
+  try {
+    const headers = ['货物编码', '货物名称', '分类', '单位', '规格/型号', '最小库存', '最大库存', '状态', '创建时间', '备注']
+    const csvContent = [
+      headers.join(','),
+      ...tableData.value.map(row => [
+        row.code || '',
+        row.name || '',
+        row.categoryName || '',
+        row.unit || '',
+        row.specification || '',
+        row.minStock || 0,
+        row.maxStock || 0,
+        row.enabled ? '启用' : '禁用',
+        formatDateTime(row.createdTime) || '',
+        row.description || ''
+      ].map(field => `"${field}"`).join(','))
+    ].join('\n')
+
+    const BOM = '\uFEFF'
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8' })
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `货物数据_${dayjs().format('YYYY-MM-DD_HH-mm-ss')}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    ElMessage.success('导出成功')
+  } catch (error) {
+    console.error('CSV导出失败:', error)
+    ElMessage.error('导出失败')
+  }
+}
+
+const handleRefresh = () => {
+  loadData()
+  ElMessage.success('数据已刷新')
+}
+
 const resetForm = () => {
   Object.assign(form, {
     id: null,
     code: '',
     name: '',
     categoryId: null,
-
     unit: '',
     specification: '',
     minStock: 0,
@@ -527,6 +1029,260 @@ const resetForm = () => {
   })
   formRef.value?.resetFields()
 }
+
+// 导入相关方法
+const handleFileChange = (file) => {
+  selectedFile.value = file.raw
+}
+
+const handleExceed = () => {
+  ElMessage.warning('只能选择一个文件')
+}
+
+const downloadTemplate = () => {
+  try {
+    // 创建模板数据
+    const templateData = [
+      ['货物名称', '分类编码', '单位', '规格/型号', '最小库存', '最大库存', '描述'],
+      ['笔记本电脑', 'COMPUTER', '台', '联想ThinkPad-8G', 5, 50, '办公用笔记本电脑 8G内存'],
+      ['笔记本电脑', 'COMPUTER', '台', '联想ThinkPad-16G', 3, 30, '办公用笔记本电脑 16G内存'],
+      ['无线鼠标', 'ACCESSORY', '个', '罗技M705-黑色', 10, 100, '无线办公鼠标 黑色'],
+      ['无线鼠标', 'ACCESSORY', '个', '罗技M705-白色', 8, 80, '无线办公鼠标 白色'],
+      ['机械键盘', 'ACCESSORY', '个', 'Cherry MX-红轴', 8, 80, '机械轴键盘 红轴'],
+      ['机械键盘', 'ACCESSORY', '个', 'Cherry MX-青轴', 5, 50, '机械轴键盘 青轴'],
+      ['iPhone15', 'MOBILE', '台', '128G-黑色', 5, 50, 'iPhone15 128G 黑色版'],
+      ['iPhone15', 'MOBILE', '台', '256G-白色', 3, 30, 'iPhone15 256G 白色版']
+    ]
+
+    // 创建工作簿和工作表
+    const workbook = XLSX.utils.book_new()
+    const worksheet = XLSX.utils.aoa_to_sheet(templateData)
+
+    // 设置列宽
+    const colWidths = [
+      { wch: 20 }, // 货物名称
+      { wch: 12 }, // 分类编码
+      { wch: 8 },  // 单位
+      { wch: 15 }, // 规格/型号
+      { wch: 10 }, // 最小库存
+      { wch: 10 }, // 最大库存
+      { wch: 25 }  // 描述
+    ]
+    worksheet['!cols'] = colWidths
+
+    // 添加工作表到工作簿
+    XLSX.utils.book_append_sheet(workbook, worksheet, '货物数据')
+
+    // 生成Excel文件
+    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' })
+    const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
+
+    // 下载文件
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = '货物导入模板.xlsx'
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+
+    ElMessage.success('Excel模板下载成功')
+  } catch (error) {
+    console.error('模板生成失败:', error)
+    ElMessage.error('模板生成失败，请重试')
+  }
+}
+
+const handleFileUpload = async () => {
+  if (!selectedFile.value) {
+    ElMessage.warning('请选择要上传的文件')
+    return
+  }
+
+  try {
+    importLoading.value = true
+
+    // 使用FileReader读取文件
+    const fileReader = new FileReader()
+
+    fileReader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result)
+        const workbook = XLSX.read(data, { type: 'array' })
+
+        // 获取第一个工作表
+        const firstSheetName = workbook.SheetNames[0]
+        const worksheet = workbook.Sheets[firstSheetName]
+
+        // 将工作表转换为JSON数组
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 })
+
+        if (jsonData.length < 2) {
+          ElMessage.error('文件内容为空或格式不正确')
+          importLoading.value = false
+          return
+        }
+
+        // 第一行是表头，从第二行开始是数据
+        const headers = jsonData[0]
+        const dataRows = jsonData.slice(1)
+
+        console.log('表头:', headers)
+        console.log('数据行数:', dataRows.length)
+
+        // 验证表头格式
+        const expectedHeaders = ['货物名称', '分类编码', '单位', '规格/型号', '最小库存', '最大库存', '描述']
+        const headerValid = expectedHeaders.every((header, index) =>
+          headers[index] && headers[index].toString().trim() === header
+        )
+
+        if (!headerValid) {
+          ElMessage.error('Excel表头格式不正确，请使用正确的模板格式')
+          console.log('期望的表头:', expectedHeaders)
+          console.log('实际的表头:', headers)
+          importLoading.value = false
+          return
+        }
+
+        // 解析数据行
+        const parsedData = []
+        for (let i = 0; i < dataRows.length; i++) {
+          const row = dataRows[i]
+
+          // 跳过空行
+          if (!row || row.every(cell => !cell || cell.toString().trim() === '')) {
+            continue
+          }
+
+          const rowData = {
+            name: row[0] ? row[0].toString().trim() : '',
+            categoryCode: row[1] ? row[1].toString().trim() : '',
+            unit: row[2] ? row[2].toString().trim() : '',
+            specification: row[3] ? row[3].toString().trim() : '',
+            minStock: row[4] ? parseFloat(row[4]) || 0 : 0,
+            maxStock: row[5] ? parseFloat(row[5]) || 0 : 0,
+            description: row[6] ? row[6].toString().trim() : ''
+          }
+
+          // 验证必填字段
+          if (!rowData.name) {
+            console.warn(`第${i + 2}行数据不完整，跳过:`, rowData)
+            continue
+          }
+
+          parsedData.push(rowData)
+        }
+
+        if (parsedData.length === 0) {
+          ElMessage.error('没有找到有效的数据行')
+          importLoading.value = false
+          return
+        }
+
+        previewData.value = parsedData
+        importStep.value = 1
+        importLoading.value = false
+        ElMessage.success(`文件解析成功，共解析到 ${parsedData.length} 条数据`)
+
+      } catch (parseError) {
+        console.error('文件解析错误:', parseError)
+        ElMessage.error('文件解析失败，请检查文件格式是否正确')
+        importLoading.value = false
+      }
+    }
+
+    fileReader.onerror = () => {
+      ElMessage.error('文件读取失败')
+      importLoading.value = false
+    }
+
+    // 开始读取文件
+    fileReader.readAsArrayBuffer(selectedFile.value)
+
+  } catch (error) {
+    console.error('文件处理失败:', error)
+    ElMessage.error('文件处理失败，请重试')
+    importLoading.value = false
+  }
+}
+
+const handleImportConfirm = async () => {
+  try {
+    importLoading.value = true
+
+    // 调用后端API导入数据
+    const response = await request.post('/goods/import', {
+      data: previewData.value
+    })
+
+    if (response.success) {
+      importResult.value = {
+        success: true,
+        message: '数据导入成功',
+        successCount: response.data.successCount || previewData.value.length,
+        failCount: response.data.failCount || 0,
+        errors: response.data.errors || [],
+        warnings: response.data.warnings || []
+      }
+    } else {
+      importResult.value = {
+        success: false,
+        message: response.message || '导入失败',
+        successCount: 0,
+        failCount: previewData.value.length,
+        errors: [{ row: 1, message: response.message }],
+        warnings: []
+      }
+    }
+
+    importStep.value = 2
+
+    // 刷新数据
+    if (importResult.value.success) {
+      loadData()
+    }
+  } catch (error) {
+    console.error('导入失败:', error)
+    importResult.value = {
+      success: false,
+      message: '导入过程中发生错误',
+      successCount: 0,
+      failCount: previewData.value.length,
+      errors: [{ row: 1, message: error.message || '未知错误' }],
+      warnings: []
+    }
+    importStep.value = 2
+  } finally {
+    importLoading.value = false
+  }
+}
+
+const handleImportCancel = () => {
+  importDialogVisible.value = false
+  resetImportData()
+}
+
+const handleImportFinish = () => {
+  importDialogVisible.value = false
+  resetImportData()
+}
+
+const resetImportData = () => {
+  importStep.value = 0
+  selectedFile.value = null
+  previewData.value = []
+  importResult.value = {
+    success: false,
+    message: '',
+    successCount: 0,
+    failCount: 0,
+    errors: [],
+    warnings: []
+  }
+  uploadRef.value?.clearFiles()
+}
+
 
 // 分类管理方法
 const handleAddCategory = () => {
@@ -589,6 +1345,546 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.goods-management {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 20px;
+}
+
+/* 页面头部样式 */
+.page-header {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.header-left {
+  flex: 1;
+  min-width: 200px;
+}
+
+.page-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.title-icon {
+  font-size: 32px;
+  color: #4f46e5;
+}
+
+.page-subtitle {
+  margin: 0;
+  color: #6b7280;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.header-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 搜索区域样式 */
+.search-section {
+  margin-bottom: 24px;
+}
+
+.search-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.search-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.search-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.search-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.stat-item .el-icon {
+  color: #4f46e5;
+}
+
+.search-form {
+  margin: 0;
+}
+
+.form-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.search-inputs {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.search-item {
+  margin-bottom: 0;
+}
+
+.search-input,
+.search-select {
+  width: 200px;
+}
+
+.search-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+/* 表格区域样式 */
+.table-section {
+  margin-bottom: 24px;
+}
+
+.table-card {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f8f9fa;
+}
+
+.table-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.table-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.goods-table {
+  width: 100%;
+}
+
+/* 表格单元格样式 */
+.code-cell,
+.name-cell,
+.category-cell,
+.unit-cell,
+.spec-cell,
+.time-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.code-icon,
+.name-icon,
+.category-icon,
+.unit-icon,
+.spec-icon,
+.time-icon {
+  color: #4f46e5;
+  font-size: 16px;
+}
+
+.code-text,
+.name-text,
+.category-text,
+.unit-text,
+.spec-text,
+.time-text {
+  font-weight: 500;
+}
+
+.stock-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.stock-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.stock-label {
+  color: #6b7280;
+}
+
+.stock-value {
+  font-weight: 600;
+  color: #374151;
+}
+
+.status-tag {
+  border-radius: 20px;
+  padding: 4px 12px;
+}
+
+.status-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* 操作按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.desktop-actions {
+  display: flex;
+}
+
+.mobile-actions {
+  display: none;
+}
+
+.action-btn {
+  padding: 4px 8px !important;
+  font-size: 12px;
+  min-width: auto;
+  white-space: nowrap;
+}
+
+.action-btn .el-icon {
+  margin-right: 4px;
+}
+
+.btn-text {
+  font-size: 12px;
+}
+
+/* 分页样式 */
+.pagination-container {
+  padding: 20px 24px;
+  display: flex;
+  justify-content: center;
+  border-top: 1px solid #e5e7eb;
+  background: #f8f9fa;
+}
+
+.goods-pagination {
+  --el-pagination-button-color: #4f46e5;
+  --el-pagination-hover-color: #4f46e5;
+}
+
+/* 移动端适配 */
+.mobile-form .form-content {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.mobile-form .search-inputs {
+  flex-direction: column;
+  gap: 16px;
+}
+
+.mobile-form .search-input,
+.mobile-form .search-select {
+  width: 100%;
+}
+
+.mobile-form .search-actions {
+  justify-content: center;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .goods-management {
+    padding: 16px;
+  }
+
+  .page-header {
+    padding: 20px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .header-actions {
+    justify-content: center;
+  }
+
+  .search-card {
+    padding: 20px;
+  }
+
+  .search-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-stats {
+    justify-content: space-around;
+  }
+
+  .desktop-actions {
+    display: none;
+  }
+
+  .mobile-actions {
+    display: block;
+  }
+
+  .table-header {
+    padding: 16px 20px;
+  }
+
+  .pagination-container {
+    padding: 16px 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .goods-management {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 24px;
+  }
+
+  .search-stats {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .stat-item {
+    justify-content: center;
+  }
+}
+
+/* 表单和弹窗样式 */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.detail-content {
+  padding: 20px 0;
+}
+
+.category-management .category-header {
+  margin-bottom: 16px;
+}
+
+/* 导入弹窗样式 */
+.import-content {
+  padding: 20px 0;
+}
+
+.import-steps {
+  margin-bottom: 30px;
+}
+
+.step-content {
+  min-height: 300px;
+}
+
+.upload-area {
+  margin-bottom: 20px;
+}
+
+.upload-dragger {
+  width: 100%;
+}
+
+.template-section {
+  margin: 20px 0;
+}
+
+.template-download {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  color: #6b7280;
+}
+
+.import-tips {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 20px;
+}
+
+.import-tips h4 {
+  margin: 0 0 12px 0;
+  color: #0369a1;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.import-tips ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #374151;
+}
+
+.import-tips li {
+  margin-bottom: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.preview-info {
+  margin-bottom: 16px;
+}
+
+.preview-table {
+  margin-bottom: 16px;
+}
+
+.preview-more {
+  text-align: center;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.import-result {
+  text-align: center;
+}
+
+.result-stats {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 20px 0;
+}
+
+.warning-list {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.warning-list h4 {
+  margin: 0 0 12px 0;
+  color: #f59e0b;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.warning-list ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.warning-item {
+  margin-bottom: 8px;
+  color: #f59e0b;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.error-list {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.error-list h4 {
+  margin: 0 0 12px 0;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.error-list ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.error-item {
+  margin-bottom: 8px;
+  color: #dc2626;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* 工具类 */
 .text-danger {
   color: #f56c6c;
 }
@@ -597,22 +1893,140 @@ onMounted(() => {
   color: #67c23a;
 }
 
-.detail-content {
-  padding: 20px 0;
-}
-
-.category-management {
-  .category-header {
-    margin-bottom: 16px;
+/* 移动端适配 */
+@media (max-width: 768px) {
+  /* 弹窗适配 */
+  .goods-dialog .el-dialog__body,
+  .goods-detail-dialog .el-dialog__body,
+  .category-dialog .el-dialog__body,
+  .category-form-dialog .el-dialog__body,
+  .import-dialog .el-dialog__body {
+    padding: 15px !important;
   }
-}
 
-/* 确保按钮在同一行显示 */
-.el-table .el-button {
-  margin: 0 2px;
-}
+  /* 表单适配 */
+  .el-form-item {
+    margin-bottom: 15px !important;
+  }
 
-.el-table .el-button + .el-button {
-  margin-left: 4px;
+  .el-form-item__label {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+
+  /* 按钮适配 */
+  .el-button {
+    padding: 8px 15px !important;
+    font-size: 14px !important;
+  }
+
+  /* 表格适配 */
+  .el-table .el-table__cell {
+    padding: 8px 0 !important;
+  }
+
+  .el-table th.el-table__cell {
+    font-size: 13px !important;
+  }
+
+  .el-table td.el-table__cell {
+    font-size: 13px !important;
+  }
+
+  /* 输入框适配 */
+  .el-input__inner,
+  .el-textarea__inner {
+    font-size: 14px !important;
+  }
+
+  /* 选择器适配 */
+  .el-select .el-input__inner {
+    font-size: 14px !important;
+  }
+
+  /* 描述列表适配 */
+  .el-descriptions__label {
+    font-size: 13px !important;
+    width: 80px !important;
+  }
+
+  .el-descriptions__content {
+    font-size: 13px !important;
+  }
+
+  /* 分页适配 */
+  .el-pagination {
+    text-align: center !important;
+  }
+
+  .el-pagination .el-pager li {
+    min-width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+    font-size: 13px !important;
+  }
+
+  .el-pagination .btn-prev,
+  .el-pagination .btn-next {
+    min-width: 28px !important;
+    height: 28px !important;
+    line-height: 28px !important;
+  }
+
+  /* 搜索区域适配 */
+  .search-form .el-form-item {
+    margin-bottom: 10px !important;
+  }
+
+  /* 头部操作按钮适配 */
+  .mobile-actions {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    justify-content: center !important;
+  }
+
+  .mobile-actions .el-button {
+    min-width: 44px !important;
+    padding: 8px 12px !important;
+  }
+
+  /* 页面头部适配 */
+  .page-header {
+    flex-direction: column !important;
+    text-align: center !important;
+    gap: 15px !important;
+  }
+
+  .header-content h1 {
+    font-size: 20px !important;
+    margin-bottom: 5px !important;
+  }
+
+  .page-subtitle {
+    font-size: 13px !important;
+  }
+
+  /* 导入步骤适配 */
+  .import-steps .el-step__title {
+    font-size: 13px !important;
+  }
+
+  /* 文件上传适配 */
+  .upload-area {
+    padding: 20px 10px !important;
+  }
+
+  /* 导入说明适配 */
+  .import-tips {
+    font-size: 13px !important;
+  }
+
+  .import-tips ul {
+    padding-left: 15px !important;
+  }
+
+  .import-tips li {
+    margin-bottom: 5px !important;
+  }
 }
 </style>

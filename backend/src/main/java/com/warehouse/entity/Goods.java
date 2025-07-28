@@ -14,13 +14,17 @@ import java.math.BigDecimal;
  * @author Warehouse Team
  */
 @Entity
-@Table(name = "goods", indexes = {
-    @Index(name = "idx_goods_code", columnList = "code", unique = true),
-    @Index(name = "idx_goods_name", columnList = "name"),
-    @Index(name = "idx_goods_category", columnList = "category_id"),
-
-    @Index(name = "idx_goods_barcode", columnList = "barcode")
-})
+@Table(name = "goods",
+    indexes = {
+        @Index(name = "idx_goods_name", columnList = "name"),
+        @Index(name = "idx_goods_category", columnList = "category_id"),
+        @Index(name = "idx_goods_barcode", columnList = "barcode"),
+        @Index(name = "idx_goods_code", columnList = "code")
+    },
+    uniqueConstraints = {
+        @UniqueConstraint(name = "uk_goods_name_category_spec_active", columnNames = {"name", "category_id", "specification", "deleted"})
+    }
+)
 public class Goods extends BaseEntity {
 
     @NotBlank(message = "货物编码不能为空")

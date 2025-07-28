@@ -9,9 +9,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
@@ -30,7 +36,7 @@ public class GoodsController {
     /**
      * 创建货物
      */
-    @PostMapping
+    @PostMapping("/create")
     @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('WAREHOUSE_ADMIN')")
     public ApiResponse<GoodsDTO> createGoods(@Valid @RequestBody GoodsDTO.CreateRequest request) {
         GoodsDTO goods = goodsService.createGoods(request);
@@ -318,5 +324,46 @@ public class GoodsController {
     public ApiResponse<List<GoodsDTO>> getAllGoodsIncludingDisabled() {
         List<GoodsDTO> goods = goodsService.findAll();
         return ApiResponse.success(goods);
+    }
+
+    /**
+     * 导入货物数据
+     */
+    @PostMapping("/import")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('WAREHOUSE_ADMIN')")
+    public ApiResponse<GoodsDTO.ImportResult> importGoods(@RequestBody GoodsDTO.ImportRequest request) {
+        try {
+            GoodsDTO.ImportResult result = goodsService.importGoods(request.getData());
+            return ApiResponse.success("数据导入完成", result);
+        } catch (Exception e) {
+            return ApiResponse.error("导入失败: " + e.getMessage());
+        }
+    }
+
+
+
+    /**
+     * 导出货物数据
+     */
+    @GetMapping("/export")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN') or hasAuthority('WAREHOUSE_ADMIN')")
+    public ResponseEntity<byte[]> exportGoods(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) Long categoryId,
+            @RequestParam(required = false) Boolean enabled) {
+        try {
+            byte[] excelData = goodsService.exportGoodsToExcel(keyword, categoryId, enabled);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+            headers.setContentDispositionFormData("attachment",
+                "goods_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")) + ".xlsx");
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(excelData);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }

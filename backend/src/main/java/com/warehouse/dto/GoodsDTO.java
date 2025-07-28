@@ -8,6 +8,8 @@ import jakarta.validation.constraints.Size;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 货物DTO
@@ -367,8 +369,7 @@ public class GoodsDTO {
      * 货物创建请求DTO
      */
     public static class CreateRequest {
-        @NotBlank(message = "货物编码不能为空")
-        private String code;
+        private String code; // 可选，如果为空则自动生成
         @NotBlank(message = "货物名称不能为空")
         private String name;
         private String shortName;
@@ -510,5 +511,129 @@ public class GoodsDTO {
 
         public String getRemark() { return remark; }
         public void setRemark(String remark) { this.remark = remark; }
+    }
+
+    /**
+     * 导入请求DTO
+     */
+    public static class ImportRequest {
+        private List<ImportData> data;
+
+        public List<ImportData> getData() { return data; }
+        public void setData(List<ImportData> data) { this.data = data; }
+    }
+
+    /**
+     * 导入数据DTO
+     */
+    public static class ImportData {
+        private String code;
+        private String name;
+        private String categoryCode;
+        private String unit;
+        private String specification;
+        private BigDecimal minStock;
+        private BigDecimal maxStock;
+        private String description;
+
+        // Getters and Setters
+        public String getCode() { return code; }
+        public void setCode(String code) { this.code = code; }
+        public String getName() { return name; }
+        public void setName(String name) { this.name = name; }
+        public String getCategoryCode() { return categoryCode; }
+        public void setCategoryCode(String categoryCode) { this.categoryCode = categoryCode; }
+        public String getUnit() { return unit; }
+        public void setUnit(String unit) { this.unit = unit; }
+        public String getSpecification() { return specification; }
+        public void setSpecification(String specification) { this.specification = specification; }
+        public BigDecimal getMinStock() { return minStock; }
+        public void setMinStock(BigDecimal minStock) { this.minStock = minStock; }
+        public BigDecimal getMaxStock() { return maxStock; }
+        public void setMaxStock(BigDecimal maxStock) { this.maxStock = maxStock; }
+        public String getDescription() { return description; }
+        public void setDescription(String description) { this.description = description; }
+    }
+
+    /**
+     * 导入结果DTO
+     */
+    public static class ImportResult {
+        private int successCount;
+        private int failCount;
+        private List<ImportError> errors;
+        private List<ImportWarning> warnings;
+
+        public ImportResult() {
+            this.errors = new ArrayList<>();
+            this.warnings = new ArrayList<>();
+        }
+
+        public ImportResult(int successCount, int failCount, List<ImportError> errors, List<ImportWarning> warnings) {
+            this.successCount = successCount;
+            this.failCount = failCount;
+            this.errors = errors != null ? errors : new ArrayList<>();
+            this.warnings = warnings != null ? warnings : new ArrayList<>();
+        }
+
+        // Getters and Setters
+        public int getSuccessCount() { return successCount; }
+        public void setSuccessCount(int successCount) { this.successCount = successCount; }
+        public int getFailCount() { return failCount; }
+        public void setFailCount(int failCount) { this.failCount = failCount; }
+        public List<ImportError> getErrors() { return errors; }
+        public void setErrors(List<ImportError> errors) { this.errors = errors; }
+        public List<ImportWarning> getWarnings() { return warnings; }
+        public void setWarnings(List<ImportWarning> warnings) { this.warnings = warnings; }
+
+        public void addError(int row, String message) {
+            this.errors.add(new ImportError(row, message));
+        }
+
+        public void addWarning(int row, String message) {
+            this.warnings.add(new ImportWarning(row, message));
+        }
+    }
+
+    /**
+     * 导入错误DTO
+     */
+    public static class ImportError {
+        private int row;
+        private String message;
+
+        public ImportError() {}
+
+        public ImportError(int row, String message) {
+            this.row = row;
+            this.message = message;
+        }
+
+        // Getters and Setters
+        public int getRow() { return row; }
+        public void setRow(int row) { this.row = row; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
+    }
+
+    /**
+     * 导入警告DTO
+     */
+    public static class ImportWarning {
+        private int row;
+        private String message;
+
+        public ImportWarning() {}
+
+        public ImportWarning(int row, String message) {
+            this.row = row;
+            this.message = message;
+        }
+
+        // Getters and Setters
+        public int getRow() { return row; }
+        public void setRow(int row) { this.row = row; }
+        public String getMessage() { return message; }
+        public void setMessage(String message) { this.message = message; }
     }
 }

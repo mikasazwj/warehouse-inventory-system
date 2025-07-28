@@ -200,4 +200,16 @@ public interface GoodsService {
         public void setCategoriesCount(long categoriesCount) { this.categoriesCount = categoriesCount; }
 
     }
+
+    /**
+     * 导入货物数据
+     */
+    GoodsDTO.ImportResult importGoods(List<GoodsDTO.ImportData> importDataList);
+
+
+
+    /**
+     * 导出货物数据到Excel
+     */
+    byte[] exportGoodsToExcel(String keyword, Long categoryId, Boolean enabled);
 }
