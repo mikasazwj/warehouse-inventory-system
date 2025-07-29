@@ -11,6 +11,10 @@
           <el-icon><Printer /></el-icon>
           测试台账打印
         </el-button>
+        <el-button type="warning" @click="testOutboundPrint">
+          <el-icon><Printer /></el-icon>
+          测试打印出库单
+        </el-button>
         <InboundLedgerPrint
           :selected-orders="[]"
           :all-orders="testLedgerData"
@@ -39,7 +43,7 @@
 <script setup>
 import { ref } from 'vue'
 import { Printer } from '@element-plus/icons-vue'
-import { generateInboundPrintContent, generateInboundLedgerPrintContent } from '@/utils/print'
+import { generateInboundPrintContent, generateInboundLedgerPrintContent, generateOutboundPrintContent } from '@/utils/print'
 import PrintPreview from '@/components/PrintPreview.vue'
 import InboundLedgerPrint from '@/components/InboundLedgerPrint.vue'
 import InboundExport from '@/components/InboundExport.vue'
@@ -232,6 +236,70 @@ const testLedgerPrint = () => {
   } catch (error) {
     console.error('生成台账打印内容失败:', error)
     ElMessage.error('生成台账打印内容失败，请重试')
+  }
+}
+
+const testOutboundPrint = () => {
+  try {
+    // 测试出库单数据
+    const testOutboundData = {
+      id: 1,
+      orderNumber: 'OUT202412010001',
+      warehouseName: '主仓库',
+      businessType: 'SALE_OUT',
+      status: 'EXECUTED',
+      recipientName: '张三',
+      createdBy: '申请人张三',
+      approvedBy: '审批人李四',
+      operatedBy: '执行人王五',
+      createdTime: '2024-12-01 10:30:00',
+      approvalTime: '2024-12-01 11:00:00',
+      operationTime: '2024-12-01 14:30:00',
+      totalQuantity: 150,
+      totalAmount: 15000,
+      remark: '其他出库，测试打印功能',
+      details: [
+        {
+          id: 1,
+          goodsCode: 'G001',
+          goodsName: '笔记本电脑',
+          goodsSpecification: 'ThinkPad X1 Carbon',
+          goodsUnit: '台',
+          quantity: 5,
+          unitPrice: 8000
+        },
+        {
+          id: 2,
+          goodsCode: 'G002',
+          goodsName: '无线鼠标',
+          goodsSpecification: '罗技MX Master 3',
+          goodsUnit: '个',
+          quantity: 10,
+          unitPrice: 500
+        },
+        {
+          id: 3,
+          goodsCode: 'G003',
+          goodsName: 'USB数据线',
+          goodsSpecification: 'Type-C 1米',
+          goodsUnit: '根',
+          quantity: 20,
+          unitPrice: 25
+        }
+      ]
+    }
+
+    // 生成打印内容
+    printContent.value = generateOutboundPrintContent(testOutboundData)
+    printTitle.value = `出库单-${testOutboundData.orderNumber}`
+
+    // 显示打印预览
+    printPreviewVisible.value = true
+
+    ElMessage.success('出库单打印预览已生成')
+  } catch (error) {
+    console.error('生成出库单打印内容失败:', error)
+    ElMessage.error('生成出库单打印内容失败，请重试')
   }
 }
 

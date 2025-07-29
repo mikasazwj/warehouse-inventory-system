@@ -251,6 +251,31 @@ export const printElement = (element, options = {}) => {
           width: 25%;
         }
 
+        /* 签名表格样式 */
+        .signature-section {
+          margin-top: 30px;
+          page-break-inside: avoid;
+        }
+
+        .signature-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .signature-cell {
+          text-align: center;
+          padding: 20px 10px;
+          border: 1px solid #333;
+          vertical-align: top;
+          width: 25%;
+        }
+
+        .signature-title {
+          font-size: 12px;
+          font-weight: bold;
+          margin-bottom: 10px;
+        }
+
         .signature-line {
           border-bottom: 1px solid #333;
           height: 40px;
@@ -558,6 +583,159 @@ const getStatusText = (status) => {
   return statusMap[status] || status || '-'
 }
 
+// 出库类型映射
+const getOutboundBusinessTypeText = (businessType) => {
+  const typeMap = {
+    'SALE_OUT': '领用出库',
+    'TRANSFER_OUT': '调拨出库',
+    'DAMAGE_OUT': '借用出库',
+    'OTHER_OUT': '其他出库'
+  }
+  return typeMap[businessType] || businessType || '-'
+}
+
+/**
+ * 生成出库单台账打印内容
+ */
+export const generateOutboundLedgerPrintContent = (orders, options = []) => {
+  const currentDate = new Date().toLocaleString('zh-CN')
+  const showDetails = options.includes('showDetails')
+  const showSummary = options.includes('showSummary')
+  const showPageNumber = options.includes('showPageNumber')
+
+  // 计算汇总数据
+  const totalOrders = orders.length
+  const totalQuantity = orders.reduce((sum, order) => sum + (order.totalQuantity || 0), 0)
+  const totalAmount = orders.reduce((sum, order) => sum + (order.totalAmount || 0), 0)
+
+  return `
+    <div class="print-container">
+      <style>
+        ${getCommonPrintStyles()}
+        .ledger-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-bottom: 20px;
+          font-size: 12px;
+        }
+        .ledger-table th,
+        .ledger-table td {
+          border: 1px solid #333;
+          padding: 8px 6px;
+          text-align: left;
+          vertical-align: middle;
+        }
+        .ledger-table th {
+          background-color: #f5f5f5;
+          font-weight: bold;
+          text-align: center;
+        }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        .summary-section {
+          background: #f8f9fa;
+          padding: 15px;
+          border-radius: 6px;
+          margin-top: 20px;
+        }
+        .summary-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 20px;
+          text-align: center;
+        }
+        .summary-item {
+          background: white;
+          padding: 12px;
+          border-radius: 4px;
+          border: 1px solid #ddd;
+        }
+        .summary-label {
+          font-size: 14px;
+          color: #666;
+          margin-bottom: 4px;
+        }
+        .summary-value {
+          font-size: 18px;
+          font-weight: bold;
+          color: #333;
+        }
+      </style>
+
+      <div class="print-content">
+        <!-- 标题 -->
+        <div class="print-header">
+          <h1>出库单台账</h1>
+          <div class="header-info">
+            <span>统计期间：${orders.length > 0 ? `${orders[0].createdTime?.split(' ')[0]} 至 ${orders[orders.length - 1].createdTime?.split(' ')[0]}` : '全部'}</span>
+            <span style="margin-left: 30px;">打印时间：${currentDate}</span>
+          </div>
+        </div>
+
+        <!-- 台账表格 -->
+        <table class="ledger-table">
+          <thead>
+            <tr>
+              <th style="width: 8%">序号</th>
+              <th style="width: 15%">出库单号</th>
+              <th style="width: 12%">仓库</th>
+              <th style="width: 10%">出库类型</th>
+              <th style="width: 10%">领取人</th>
+              <th style="width: 8%">状态</th>
+              <th style="width: 10%">总数量</th>
+              <th style="width: 12%">总金额(元)</th>
+              <th style="width: 10%">出库日期</th>
+              <th style="width: 5%">制单人</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${orders.map((order, index) => `
+              <tr>
+                <td class="text-center">${index + 1}</td>
+                <td>${order.orderNumber || '-'}</td>
+                <td>${order.warehouseName || '-'}</td>
+                <td class="text-center">${getOutboundBusinessTypeText(order.businessType)}</td>
+                <td>${order.recipientName || '-'}</td>
+                <td class="text-center">${getStatusText(order.status)}</td>
+                <td class="text-right">${formatNumber(order.totalQuantity)}</td>
+                <td class="text-right">${formatNumber(order.totalAmount, 2)}</td>
+                <td class="text-center">${order.plannedDate || '-'}</td>
+                <td>${order.createdBy || '-'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        ${showSummary ? `
+        <!-- 汇总统计 -->
+        <div class="summary-section">
+          <h3 style="margin: 0 0 15px 0; text-align: center;">汇总统计</h3>
+          <div class="summary-grid">
+            <div class="summary-item">
+              <div class="summary-label">出库单总数</div>
+              <div class="summary-value">${totalOrders} 个</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">总出库数量</div>
+              <div class="summary-value">${formatNumber(totalQuantity)} 件</div>
+            </div>
+            <div class="summary-item">
+              <div class="summary-label">总出库金额</div>
+              <div class="summary-value">¥${formatNumber(totalAmount, 2)}</div>
+            </div>
+          </div>
+        </div>
+        ` : ''}
+
+        <!-- 页脚 -->
+        <div class="print-footer">
+          ${showPageNumber ? `第 1 页，共 1 页 | ` : ''}打印时间：${currentDate} | 仓库管理系统
+        </div>
+      </div>
+    </div>
+  `
+}
+
 
 
 const getDetailSpecificationModel = (item) => {
@@ -691,3 +869,153 @@ export const generateInboundLedgerPrintContent = (inboundOrders, options = {}) =
     </div>
   `
 }
+
+/**
+ * 生成出库单打印内容
+ * @param {Object} outboundData - 出库单数据
+ * @returns {string} HTML内容
+ */
+export const generateOutboundPrintContent = (outboundData) => {
+  const currentDate = new Date().toLocaleString('zh-CN')
+
+  // 格式化日期时间
+  const formatDateTime = (dateTime) => {
+    if (!dateTime) return '-'
+    const date = new Date(dateTime)
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  }
+
+  // 格式化数字
+  const formatNumber = (num, decimals = 0) => {
+    if (num === null || num === undefined || isNaN(num)) return '0'
+    return Number(num).toLocaleString('zh-CN', {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    })
+  }
+
+  return `
+    <div class="print-container">
+      <!-- 文档标题 -->
+      <div class="document-title">出库单</div>
+
+      <!-- 主要内容区域 -->
+      <div class="print-content">
+        <!-- 基本信息 -->
+        <div class="basic-info">
+          <table class="info-table">
+            <tr>
+              <td class="info-label">出库单号：</td>
+              <td class="info-value">${outboundData.orderNumber || '-'}</td>
+              <td class="info-label">出库类型：</td>
+              <td class="info-value">${getOutboundBusinessTypeText(outboundData.businessType)}</td>
+            </tr>
+            <tr>
+              <td class="info-label">出库仓库：</td>
+              <td class="info-value">${outboundData.warehouseName || '-'}</td>
+              <td class="info-label">状态：</td>
+              <td class="info-value">${outboundData.status === 'PENDING' ? '待审批' : outboundData.status === 'APPROVED' ? '已审批' : outboundData.status === 'EXECUTED' ? '已执行' : outboundData.status === 'CANCELLED' ? '已取消' : '未知'}</td>
+            </tr>
+            <tr>
+              <td class="info-label">申请人：</td>
+              <td class="info-value">${outboundData.createdBy || '-'}</td>
+              <td class="info-label">申请时间：</td>
+              <td class="info-value">${formatDateTime(outboundData.createdTime)}</td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 货物明细 -->
+        <div class="goods-details">
+          <div class="section-title">货物明细</div>
+          <table class="details-table">
+            <thead>
+              <tr>
+                <th style="width: 8%">序号</th>
+                <th style="width: 25%">货物名称</th>
+                <th style="width: 15%">规格型号</th>
+                <th style="width: 10%">单位</th>
+                <th style="width: 12%">出库数量</th>
+                <th style="width: 15%">单价(元)</th>
+                <th style="width: 15%">金额(元)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(outboundData.details || []).map((item, index) => `
+                <tr>
+                  <td style="text-align: center">${index + 1}</td>
+                  <td>${item.goodsName || '-'}</td>
+                  <td>${item.goodsSpecification || item.specification || '-'}</td>
+                  <td style="text-align: center">${item.goodsUnit || item.unit || '-'}</td>
+                  <td style="text-align: right">${formatNumber(item.quantity)}</td>
+                  <td style="text-align: right">${formatNumber(item.unitPrice, 2)}</td>
+                  <td style="text-align: right">${formatNumber((item.quantity || 0) * (item.unitPrice || 0), 2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- 汇总信息 -->
+        <div class="summary-info">
+          <div class="summary-row">
+            <span class="summary-item">总数量：${formatNumber(outboundData.totalQuantity || 0)} 件</span>
+            <span class="summary-item">总金额：¥${formatNumber(outboundData.totalAmount || 0, 2)}</span>
+          </div>
+        </div>
+
+        <!-- 备注信息 -->
+        ${outboundData.remark ? `
+          <div class="remark-section">
+            <div class="section-title">备注</div>
+            <div class="remark-content">${outboundData.remark}</div>
+          </div>
+        ` : ''}
+
+        <!-- 签名区域 -->
+        <div class="signature-section">
+          <table class="signature-table">
+            <tr>
+              <td class="signature-cell">
+                <div class="signature-title">领取人签名：</div>
+                <div class="signature-line"></div>
+                <div class="signature-date">日期：___________</div>
+              </td>
+              <td class="signature-cell">
+                <div class="signature-title">班长审批：</div>
+                <div class="signature-line"></div>
+                <div class="signature-date">日期：___________</div>
+              </td>
+              <td class="signature-cell">
+                <div class="signature-title">队长审批：</div>
+                <div class="signature-line"></div>
+                <div class="signature-date">日期：___________</div>
+              </td>
+              <td class="signature-cell">
+                <div class="signature-title">出库人签名：</div>
+                <div class="signature-line"></div>
+                <div class="signature-date">日期：___________</div>
+              </td>
+            </tr>
+          </table>
+        </div>
+
+        <!-- 页脚信息 -->
+        <div class="footer-info">
+          <div class="print-info">
+            <span>打印时间：${currentDate}</span>
+            <span style="margin-left: 50px;">第 1 页，共 1 页</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+}
+
+

@@ -754,7 +754,25 @@ public class OutboundOrderServiceImpl implements OutboundOrderService {
 
         // 设置领取人信息
         dto.setRecipientName(order.getRecipientName());
-        
+
+        // 设置审批人信息
+        if (order.getApprover() != null) {
+            dto.setApprovedBy(order.getApprover().getRealName());
+        }
+
+        // 设置执行人信息
+        if (order.getOperator() != null) {
+            dto.setOperatedBy(order.getOperator().getRealName());
+        }
+
+        // 设置申请人信息
+        if (order.getApplicant() != null) {
+            dto.setCreatedBy(order.getApplicant().getRealName());
+        } else {
+            // 如果没有申请人关联，使用BaseEntity的createdBy字段
+            dto.setCreatedBy(order.getCreatedBy());
+        }
+
         // 设置明细信息
         List<OutboundOrderDetail> details = outboundOrderDetailRepository.findByOutboundOrderId(order.getId());
         List<OutboundOrderDTO.OutboundOrderDetailDTO> detailDTOs = details.stream()

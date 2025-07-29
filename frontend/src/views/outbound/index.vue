@@ -1,18 +1,55 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1 class="page-title">出库管理</h1>
-      <div class="page-actions">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
-          新建出库单
-        </el-button>
+  <div class="page-container modern-container">
+    <div class="page-header modern-header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="page-title">
+            <div class="title-icon">
+              <el-icon><Position /></el-icon>
+            </div>
+            <div class="title-content">
+              <h1>出库管理</h1>
+              <p>管理货物出库单据和流程</p>
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <OutboundLedgerPrint
+            :selected-orders="selectedRows"
+            :all-orders="tableData"
+            @refresh="loadData"
+          />
+          <OutboundExport
+            :selected-orders="selectedRows"
+            :current-page-data="tableData"
+            :search-params="searchForm"
+            @refresh="loadData"
+          />
+          <el-button type="primary" @click="handleAdd" class="modern-button">
+            <el-icon><Plus /></el-icon>
+            新建出库单
+          </el-button>
+        </div>
       </div>
     </div>
 
     <!-- 搜索表单 -->
-    <div class="search-form">
-      <el-form :model="searchForm" inline>
+    <div class="search-form modern-search">
+      <div class="search-header">
+        <div class="search-title">
+          <el-icon><Search /></el-icon>
+          <span>筛选条件</span>
+        </div>
+        <el-button
+          text
+          @click="handleReset"
+          class="reset-button"
+          :icon="Refresh"
+        >
+          重置
+        </el-button>
+      </div>
+      <el-form :model="searchForm" :inline="!isMobile" class="search-form-content" :class="{ 'mobile-form': isMobile }">
         <el-form-item label="单号">
           <el-input
             v-model="searchForm.orderNumber"
@@ -80,14 +117,33 @@
     </div>
 
     <!-- 数据表格 -->
-    <div class="data-table">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        border
-        style="width: 100%"
-      >
+    <div class="data-table modern-table">
+      <div class="table-header">
+        <div class="table-title">
+          <el-icon><Document /></el-icon>
+          <span>出库单列表</span>
+        </div>
+        <div class="table-actions">
+          <el-button
+            text
+            @click="handleRefresh"
+            :icon="Refresh"
+            class="refresh-button"
+          >
+            刷新
+          </el-button>
+        </div>
+      </div>
+      <div class="table-content">
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          class="modern-data-table"
+          :class="{ 'mobile-table': isMobile }"
+          empty-text="暂无出库单数据"
+          @selection-change="handleSelectionChange"
+        >
+        <el-table-column type="selection" width="55" />
         <el-table-column prop="orderNumber" label="出库单号" min-width="140" />
         <el-table-column prop="warehouseName" label="仓库" min-width="120" />
         <el-table-column label="出库类型" width="100">
@@ -118,18 +174,24 @@
             {{ formatDateTime(row.createdTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column label="操作" :width="isMobile ? 80 : 320" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleView(row)">
+            <!-- 桌面端操作按钮 -->
+            <div v-if="!isMobile" class="action-buttons desktop-actions">
+              <el-button type="primary" size="small" @click="handleView(row)" class="action-btn">
                 <el-icon><View /></el-icon>
                 查看
+              </el-button>
+              <el-button type="info" size="small" @click="handlePrint(row)" class="action-btn">
+                <el-icon><Printer /></el-icon>
+                打印
               </el-button>
               <el-button
                 v-if="row.status === 'PENDING'"
                 type="warning"
                 size="small"
                 @click="handleEdit(row)"
+                class="action-btn"
               >
                 <el-icon><Edit /></el-icon>
                 编辑
@@ -139,6 +201,7 @@
                 type="success"
                 size="small"
                 @click="handleApprove(row)"
+                class="action-btn"
               >
                 <el-icon><Check /></el-icon>
                 审批
@@ -148,6 +211,7 @@
                 type="success"
                 size="small"
                 @click="handleExecute(row)"
+                class="action-btn"
               >
                 <el-icon><Position /></el-icon>
                 执行
@@ -157,6 +221,7 @@
                 type="success"
                 size="small"
                 @click="handleView(row)"
+                class="action-btn"
               >
                 <el-icon><Check /></el-icon>
                 已执行
@@ -166,35 +231,112 @@
                 type="danger"
                 size="small"
                 @click="handleCancel(row)"
+                class="action-btn"
               >
                 <el-icon><Close /></el-icon>
                 取消
               </el-button>
             </div>
+
+            <!-- 移动端操作按钮 -->
+            <div v-else class="mobile-actions">
+              <el-dropdown trigger="click" placement="bottom-end">
+                <el-button type="primary" size="small" class="mobile-action-trigger">
+                  <el-icon><MoreFilled /></el-icon>
+                  操作
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleView(row)">
+                      <el-icon><View /></el-icon>
+                      查看详情
+                    </el-dropdown-item>
+                    <el-dropdown-item @click="handlePrint(row)">
+                      <el-icon><Printer /></el-icon>
+                      打印出库单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'PENDING'"
+                      @click="handleEdit(row)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                      编辑出库单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canApprove(row)"
+                      @click="handleApprove(row)"
+                    >
+                      <el-icon><Check /></el-icon>
+                      审批出库单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'APPROVED' && (userStore.isWarehouseAdmin || userStore.isTeamLeader || userStore.isSquadLeader)"
+                      @click="handleExecute(row)"
+                    >
+                      <el-icon><Position /></el-icon>
+                      执行出库单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="canCancel(row)"
+                      @click="handleCancel(row)"
+                      class="danger-item"
+                    >
+                      <el-icon><Close /></el-icon>
+                      取消出库单
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+        <!-- 分页 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="[10, 20, 50, 100]"
+            :layout="isMobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'"
+            background
+            class="modern-pagination"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogTitle"
-      width="1200px"
-      :close-on-click-modal="false"
-      top="5vh"
+      :width="isMobile ? '95%' : '1200px'"
+      :fullscreen="isMobile"
+      class="outbound-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header outbound-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>{{ dialogTitle }}</h2>
+                <p>{{ form.id ? '修改出库单信息' : '创建新的出库单' }}</p>
+              </div>
+            </div>
+            <el-button @click="dialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <el-form
         ref="formRef"
         :model="form"
@@ -381,9 +523,31 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      title="出库单详情"
-      width="1000px"
+      :width="isMobile ? '95%' : '1000px'"
+      :fullscreen="isMobile"
+      class="outbound-detail-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header outbound-detail-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><View /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>出库单详情</h2>
+                <p>查看出库单的详细信息和货物清单</p>
+              </div>
+            </div>
+            <el-button @click="viewDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <div class="detail-view" v-if="viewData">
         <!-- 基本信息 -->
         <el-descriptions title="基本信息" :column="3" border>
@@ -428,14 +592,43 @@
           </el-table>
         </div>
       </div>
+      <template #footer>
+        <el-button @click="viewDialogVisible = false">关闭</el-button>
+        <el-button type="primary" @click="handlePrint(viewData)">
+          <el-icon><Printer /></el-icon>
+          打印出库单
+        </el-button>
+      </template>
     </el-dialog>
 
     <!-- 审批对话框 -->
     <el-dialog
       v-model="approvalDialogVisible"
-      title="审批出库单"
-      width="500px"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
+      class="outbound-approval-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header outbound-approval-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Check /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>审批出库单</h2>
+                <p>审核出库单申请并给出审批意见</p>
+              </div>
+            </div>
+            <el-button @click="approvalDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <el-form :model="approvalForm" label-width="100px">
         <el-form-item label="审批结果">
           <el-radio-group v-model="approvalForm.status">
@@ -463,9 +656,31 @@
     <!-- 库存不足提示对话框 -->
     <el-dialog
       v-model="stockWarningVisible"
-      title="库存不足提示"
-      width="600px"
+      :width="isMobile ? '95%' : '700px'"
+      :fullscreen="isMobile"
+      class="outbound-warning-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header outbound-warning-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Warning /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>库存不足提示</h2>
+                <p>以下货物库存不足，请检查后重新提交</p>
+              </div>
+            </div>
+            <el-button @click="stockWarningVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <div class="stock-warning">
         <el-alert
           title="以下货物库存不足，请检查后重新提交"
@@ -489,10 +704,32 @@
     <!-- 货物选择弹出框 -->
     <el-dialog
       v-model="goodsSelectorVisible"
-      title="选择货物"
-      width="80%"
+      :width="isMobile ? '95%' : '1000px'"
+      :fullscreen="isMobile"
+      class="outbound-goods-dialog modern-dialog"
+      :show-close="false"
       :close-on-click-modal="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header outbound-goods-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Box /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>选择货物</h2>
+                <p>选择需要出库的货物并设置数量</p>
+              </div>
+            </div>
+            <el-button @click="goodsSelectorVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <!-- 筛选条件 -->
       <div class="goods-filter">
         <el-form :model="goodsFilter" inline>
@@ -547,17 +784,30 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 打印预览 -->
+    <PrintPreview
+      v-model="printPreviewVisible"
+      :content="printContent"
+      :title="printTitle"
+      @print="handlePrintComplete"
+      @close="handlePrintPreviewClose"
+    />
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus, Delete, View, Edit, Check, Close, Search } from '@element-plus/icons-vue'
+import { Plus, Delete, View, Edit, Check, Close, Search, Warning, Box, Position, Refresh, Document, MoreFilled, Printer } from '@element-plus/icons-vue'
 import { request } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
 import { useDeviceDetection, mobileOptimizations } from '@/utils/responsive'
+import { generateOutboundPrintContent } from '@/utils/print'
+import PrintPreview from '@/components/PrintPreview.vue'
+import OutboundLedgerPrint from '@/components/OutboundLedgerPrint.vue'
+import OutboundExport from '@/components/OutboundExport.vue'
 
 // 响应式检测
 const { isMobile, isTablet, isDesktop } = useDeviceDetection()
@@ -566,6 +816,8 @@ const { isMobile, isTablet, isDesktop } = useDeviceDetection()
 const userStore = useUserStore()
 const loading = ref(false)
 const submitLoading = ref(false)
+
+
 const approvalLoading = ref(false)
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
@@ -607,6 +859,14 @@ const pagination = reactive({
   size: 10,
   total: 0
 })
+
+// 打印相关变量
+const printPreviewVisible = ref(false)
+const printContent = ref('')
+const printTitle = ref('')
+
+// 选择相关变量
+const selectedRows = ref([])
 
 // 表单数据
 const form = reactive({
@@ -1456,6 +1716,49 @@ const initializeDefaultWarehouse = () => {
   }
 }
 
+// 打印功能
+const handlePrint = async (row) => {
+  try {
+    // 如果传入的是行数据，需要获取完整的详情数据
+    let printData = row
+    if (!row.details || row.details.length === 0) {
+      // 获取完整的出库单详情
+      const response = await request.get(`/outbound-orders/${row.id}`)
+      if (response.success) {
+        printData = response.data
+      } else {
+        ElMessage.error('获取出库单详情失败')
+        return
+      }
+    }
+
+    // 生成打印内容
+    printContent.value = generateOutboundPrintContent(printData)
+    printTitle.value = `出库单-${printData.orderNumber}`
+
+    // 显示打印预览
+    printPreviewVisible.value = true
+  } catch (error) {
+    console.error('打印失败:', error)
+    ElMessage.error('获取打印数据失败，请重试')
+  }
+}
+
+const handlePrintComplete = () => {
+  printPreviewVisible.value = false
+  ElMessage.success('打印任务已发送')
+}
+
+const handlePrintPreviewClose = () => {
+  printContent.value = ''
+  printTitle.value = ''
+}
+
+// 选择变更处理
+const handleSelectionChange = (selection) => {
+  selectedRows.value = selection
+}
+
 // 生命周期
 onMounted(() => {
   loadData()
@@ -1469,6 +1772,361 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 现代化容器样式 */
+.modern-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+/* 现代化头部样式 */
+.modern-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .title-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+    }
+
+    .title-content {
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 4px 0 0 0;
+        font-size: 16px;
+        color: #64748b;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .header-right {
+    .modern-button {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+      }
+    }
+  }
+}
+
+/* 现代化搜索表单样式 */
+.modern-search {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .search-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+
+      .el-icon {
+        color: #ef4444;
+        font-size: 20px;
+      }
+    }
+
+    .reset-button {
+      color: #64748b;
+
+      &:hover {
+        color: #ef4444;
+      }
+    }
+  }
+
+  .search-form-content {
+    .el-form-item {
+      margin-bottom: 16px;
+      margin-right: 16px;
+
+      .el-form-item__label {
+        font-weight: 600;
+        color: #374151;
+      }
+    }
+
+    /* PC端横向布局 */
+    &:not(.mobile-form) {
+      .el-form-item {
+        display: inline-block;
+        vertical-align: top;
+      }
+    }
+  }
+
+  /* 移动端竖向布局 */
+  &.mobile-form {
+    .search-form-content {
+      .el-form-item {
+        display: block;
+        margin-bottom: 20px;
+        margin-right: 0;
+
+        .el-form-item__label {
+          width: 100% !important;
+          margin-bottom: 8px;
+          text-align: left !important;
+        }
+
+        .el-form-item__content {
+          margin-left: 0 !important;
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+/* 现代化表格样式 */
+.modern-table {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .table-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+
+      .el-icon {
+        color: #ef4444;
+        font-size: 20px;
+      }
+    }
+
+    .table-actions {
+      .refresh-button {
+        color: #64748b;
+
+        &:hover {
+          color: #ef4444;
+        }
+      }
+    }
+  }
+
+  .table-content {
+    .modern-data-table {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+
+      .el-table__header {
+        background: #f8fafc;
+
+        th {
+          background: #f8fafc !important;
+          color: #374151;
+          font-weight: 600;
+          border-bottom: 1px solid #e2e8f0;
+        }
+      }
+
+      .el-table__body {
+        tr {
+          transition: all 0.3s ease;
+
+          &:hover {
+            background: #f8fafc;
+          }
+        }
+
+        td {
+          border-bottom: 1px solid #f1f5f9;
+        }
+      }
+    }
+
+    &.mobile-table {
+      .modern-data-table {
+        font-size: 14px;
+
+        .el-table__cell {
+          padding: 8px 4px;
+        }
+      }
+    }
+  }
+
+  .pagination-wrapper {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: center;
+
+    .modern-pagination {
+      .el-pagination__total,
+      .el-pagination__sizes {
+        color: #64748b;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+/* 移动端操作栏样式 */
+.mobile-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  .mobile-action-trigger {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .el-icon {
+      margin-right: 4px;
+      font-size: 14px;
+    }
+  }
+}
+
+.desktop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .action-btn {
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+/* 下拉菜单样式 */
+.el-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  padding: 8px 0;
+
+  .el-dropdown-menu__item {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 2px 8px;
+
+    &:hover {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .el-icon {
+      margin-right: 8px;
+      font-size: 16px;
+      color: #6b7280;
+    }
+
+    &.danger-item {
+      color: #dc2626;
+
+      &:hover {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .el-icon {
+        color: #dc2626;
+      }
+    }
+  }
+}
+
 .text-success {
   color: #67c23a;
   font-weight: 600;
@@ -1573,6 +2231,103 @@ onMounted(() => {
 
 /* 移动端响应式样式 */
 @media (max-width: 768px) {
+  .modern-container {
+    padding: 16px;
+  }
+
+  .modern-header {
+    padding: 20px;
+    margin-bottom: 16px;
+
+    .header-content {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 16px;
+    }
+
+    .page-title {
+      .title-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+
+      .title-content {
+        h1 {
+          font-size: 24px;
+        }
+
+        p {
+          font-size: 14px;
+        }
+      }
+    }
+
+    .header-right {
+      .modern-button {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 24px;
+      }
+    }
+  }
+
+  .modern-search {
+    padding: 16px;
+    margin-bottom: 16px;
+
+    .search-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 16px;
+
+      .search-title {
+        font-size: 16px;
+      }
+    }
+  }
+
+  .modern-table {
+    padding: 16px;
+
+    .table-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 12px;
+      margin-bottom: 16px;
+
+      .table-title {
+        font-size: 16px;
+      }
+    }
+
+    .table-content {
+      overflow-x: auto;
+
+      .modern-data-table {
+        min-width: 800px;
+        font-size: 12px;
+
+        .el-table__cell {
+          padding: 8px 4px;
+        }
+      }
+    }
+
+    .pagination-wrapper {
+      margin-top: 16px;
+      padding-top: 16px;
+
+      .modern-pagination {
+        .el-pagination__sizes,
+        .el-pagination__jump {
+          display: none;
+        }
+      }
+    }
+  }
+
   .outbound-container {
     padding: 15px;
 
@@ -1716,5 +2471,369 @@ onMounted(() => {
     }
   }
 }
+</style>
 
+<!-- 全局样式 - 出库单对话框 -->
+<style>
+/* 出库单新增/编辑对话框样式 */
+.outbound-dialog .outbound-header {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.outbound-dialog .outbound-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.outbound-dialog .outbound-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.outbound-dialog .outbound-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.outbound-dialog .outbound-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.outbound-dialog .outbound-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.outbound-dialog .outbound-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.outbound-dialog .outbound-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.outbound-dialog .outbound-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 出库单详情对话框样式 */
+.outbound-detail-dialog .outbound-detail-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.outbound-detail-dialog .outbound-detail-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 出库单审批对话框样式 */
+.outbound-approval-dialog .outbound-approval-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.outbound-approval-dialog .outbound-approval-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 出库单库存警告对话框样式 */
+.outbound-warning-dialog .outbound-warning-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.outbound-warning-dialog .outbound-warning-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 出库单货物选择对话框样式 */
+.outbound-goods-dialog .outbound-goods-header {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.outbound-goods-dialog .outbound-goods-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .outbound-dialog .outbound-header,
+  .outbound-detail-dialog .outbound-detail-header,
+  .outbound-approval-dialog .outbound-approval-header,
+  .outbound-warning-dialog .outbound-warning-header,
+  .outbound-goods-dialog .outbound-goods-header {
+    padding: 20px 16px !important;
+    margin: -20px -16px 0 -16px !important;
+  }
+
+  .outbound-dialog .outbound-header .title-icon,
+  .outbound-detail-dialog .outbound-detail-header .title-icon,
+  .outbound-approval-dialog .outbound-approval-header .title-icon,
+  .outbound-warning-dialog .outbound-warning-header .title-icon,
+  .outbound-goods-dialog .outbound-goods-header .title-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .outbound-dialog .outbound-header .title-icon .el-icon,
+  .outbound-detail-dialog .outbound-detail-header .title-icon .el-icon,
+  .outbound-approval-dialog .outbound-approval-header .title-icon .el-icon,
+  .outbound-warning-dialog .outbound-warning-header .title-icon .el-icon,
+  .outbound-goods-dialog .outbound-goods-header .title-icon .el-icon {
+    font-size: 20px !important;
+  }
+
+  .outbound-dialog .outbound-header .title-content h2,
+  .outbound-detail-dialog .outbound-detail-header .title-content h2,
+  .outbound-approval-dialog .outbound-approval-header .title-content h2,
+  .outbound-warning-dialog .outbound-warning-header .title-content h2,
+  .outbound-goods-dialog .outbound-goods-header .title-content h2 {
+    font-size: 20px !important;
+  }
+}
 </style>

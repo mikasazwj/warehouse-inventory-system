@@ -1,18 +1,44 @@
 <template>
-  <div class="page-container">
-    <div class="page-header">
-      <h1 class="page-title">调拨管理</h1>
-      <div class="page-actions">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
-          新建调拨单
-        </el-button>
+  <div class="page-container modern-container">
+    <div class="page-header modern-header">
+      <div class="header-content">
+        <div class="header-left">
+          <div class="page-title">
+            <div class="title-icon">
+              <el-icon><Position /></el-icon>
+            </div>
+            <div class="title-content">
+              <h1>调拨管理</h1>
+              <p>管理货物调拨单据和流程</p>
+            </div>
+          </div>
+        </div>
+        <div class="header-right">
+          <el-button type="primary" @click="handleAdd" class="modern-button">
+            <el-icon><Plus /></el-icon>
+            新建调拨单
+          </el-button>
+        </div>
       </div>
     </div>
 
     <!-- 搜索表单 -->
-    <div class="search-form">
-      <el-form :model="searchForm" inline>
+    <div class="search-form modern-search">
+      <div class="search-header">
+        <div class="search-title">
+          <el-icon><Search /></el-icon>
+          <span>筛选条件</span>
+        </div>
+        <el-button
+          text
+          @click="handleReset"
+          class="reset-button"
+          :icon="Refresh"
+        >
+          重置
+        </el-button>
+      </div>
+      <el-form :model="searchForm" :inline="!isMobile" class="search-form-content" :class="{ 'mobile-form': isMobile }">
         <el-form-item label="单号">
           <el-input
             v-model="searchForm.orderNumber"
@@ -75,14 +101,31 @@
     </div>
 
     <!-- 数据表格 -->
-    <div class="data-table">
-      <el-table
-        v-loading="loading"
-        :data="tableData"
-        stripe
-        border
-        style="width: 100%"
-      >
+    <div class="data-table modern-table">
+      <div class="table-header">
+        <div class="table-title">
+          <el-icon><Document /></el-icon>
+          <span>调拨单列表</span>
+        </div>
+        <div class="table-actions">
+          <el-button
+            text
+            @click="handleRefresh"
+            :icon="Refresh"
+            class="refresh-button"
+          >
+            刷新
+          </el-button>
+        </div>
+      </div>
+      <div class="table-content">
+        <el-table
+          v-loading="loading"
+          :data="tableData"
+          class="modern-data-table"
+          :class="{ 'mobile-table': isMobile }"
+          empty-text="暂无调拨单数据"
+        >
         <el-table-column prop="orderNumber" label="调拨单号" width="140" />
         <el-table-column prop="sourceWarehouseName" label="源仓库" width="120" />
         <el-table-column prop="targetWarehouseName" label="目标仓库" width="120" />
@@ -105,10 +148,11 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="320" fixed="right">
+        <el-table-column label="操作" :width="isMobile ? 80 : 320" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
-              <el-button type="primary" size="small" @click="handleView(row)">
+            <!-- 桌面端操作按钮 -->
+            <div v-if="!isMobile" class="action-buttons desktop-actions">
+              <el-button type="primary" size="small" @click="handleView(row)" class="action-btn">
                 <el-icon><View /></el-icon>
                 查看
               </el-button>
@@ -117,6 +161,7 @@
                 type="warning"
                 size="small"
                 @click="handleEdit(row)"
+                class="action-btn"
               >
                 <el-icon><Edit /></el-icon>
                 编辑
@@ -126,6 +171,7 @@
                 type="success"
                 size="small"
                 @click="handleApprove(row)"
+                class="action-btn"
               >
                 <el-icon><Check /></el-icon>
                 审批
@@ -135,6 +181,7 @@
                 type="success"
                 size="small"
                 @click="handleExecute(row)"
+                class="action-btn"
               >
                 <el-icon><Position /></el-icon>
                 执行
@@ -144,6 +191,7 @@
                 type="success"
                 size="small"
                 @click="handleView(row)"
+                class="action-btn"
               >
                 <el-icon><Check /></el-icon>
                 已执行
@@ -153,35 +201,109 @@
                 type="danger"
                 size="small"
                 @click="handleCancel(row)"
+                class="action-btn"
               >
                 <el-icon><Close /></el-icon>
                 取消
               </el-button>
             </div>
+
+            <!-- 移动端操作按钮 -->
+            <div v-else class="mobile-actions">
+              <el-dropdown trigger="click" placement="bottom-end">
+                <el-button type="primary" size="small" class="mobile-action-trigger">
+                  <el-icon><MoreFilled /></el-icon>
+                  操作
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item @click="handleView(row)">
+                      <el-icon><View /></el-icon>
+                      查看详情
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'PENDING'"
+                      @click="handleEdit(row)"
+                    >
+                      <el-icon><Edit /></el-icon>
+                      编辑调拨单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'PENDING'"
+                      @click="handleApprove(row)"
+                    >
+                      <el-icon><Check /></el-icon>
+                      审批调拨单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'APPROVED'"
+                      @click="handleExecute(row)"
+                    >
+                      <el-icon><Position /></el-icon>
+                      执行调拨单
+                    </el-dropdown-item>
+                    <el-dropdown-item
+                      v-if="row.status === 'PENDING'"
+                      @click="handleCancel(row)"
+                      class="danger-item"
+                    >
+                      <el-icon><Close /></el-icon>
+                      取消调拨单
+                    </el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </div>
           </template>
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
-      <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.size"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
+        <!-- 分页 -->
+        <div class="pagination-wrapper">
+          <el-pagination
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
+            :total="pagination.total"
+            :page-sizes="[10, 20, 50, 100]"
+            :layout="isMobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'"
+            background
+            class="modern-pagination"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- 新增/编辑对话框 -->
     <el-dialog
       v-model="dialogVisible"
-      :title="dialogTitle"
-      width="1200px"
+      :width="isMobile ? '95%' : '1200px'"
+      :fullscreen="isMobile"
+      class="transfer-dialog modern-dialog"
+      :show-close="false"
       :close-on-click-modal="false"
-      top="5vh"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header transfer-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Plus v-if="!form.id" /><Edit v-else /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>{{ dialogTitle }}</h2>
+                <p>{{ form.id ? '修改调拨单信息' : '创建新的调拨单' }}</p>
+              </div>
+            </div>
+            <el-button @click="dialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <el-form
         ref="formRef"
         :model="form"
@@ -370,9 +492,31 @@
     <!-- 查看详情对话框 -->
     <el-dialog
       v-model="viewDialogVisible"
-      title="调拨单详情"
-      width="1000px"
+      :width="isMobile ? '95%' : '1000px'"
+      :fullscreen="isMobile"
+      class="transfer-detail-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header transfer-detail-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><View /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>调拨单详情</h2>
+                <p>查看调拨单的详细信息和货物清单</p>
+              </div>
+            </div>
+            <el-button @click="viewDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <div class="detail-view" v-if="viewData">
         <!-- 基本信息 -->
         <el-descriptions title="基本信息" :column="3" border>
@@ -424,9 +568,31 @@
     <!-- 审批对话框 -->
     <el-dialog
       v-model="approvalDialogVisible"
-      title="审批调拨单"
-      width="500px"
+      :width="isMobile ? '95%' : '600px'"
+      :fullscreen="isMobile"
+      class="transfer-approval-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header transfer-approval-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Check /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>审批调拨单</h2>
+                <p>审核调拨单申请并给出审批意见</p>
+              </div>
+            </div>
+            <el-button @click="approvalDialogVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <el-form :model="approvalForm" label-width="100px">
         <el-form-item label="审批结果">
           <el-radio-group v-model="approvalForm.status">
@@ -454,9 +620,31 @@
     <!-- 库存不足提示对话框 -->
     <el-dialog
       v-model="stockWarningVisible"
-      title="库存不足提示"
-      width="600px"
+      :width="isMobile ? '95%' : '700px'"
+      :fullscreen="isMobile"
+      class="transfer-warning-dialog modern-dialog"
+      :show-close="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header transfer-warning-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Warning /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>库存不足提示</h2>
+                <p>以下货物在源仓库库存不足，请检查后重新提交</p>
+              </div>
+            </div>
+            <el-button @click="stockWarningVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <div class="stock-warning">
         <el-alert
           title="以下货物在源仓库库存不足，请检查后重新提交"
@@ -480,10 +668,32 @@
     <!-- 货物选择弹出框 -->
     <el-dialog
       v-model="goodsSelectorVisible"
-      title="选择货物"
-      width="80%"
+      :width="isMobile ? '95%' : '1000px'"
+      :fullscreen="isMobile"
+      class="transfer-goods-dialog modern-dialog"
+      :show-close="false"
       :close-on-click-modal="false"
+      append-to-body
+      destroy-on-close
     >
+      <template #header>
+        <div class="dialog-header transfer-goods-header">
+          <div class="header-content">
+            <div class="dialog-title">
+              <div class="title-icon">
+                <el-icon><Box /></el-icon>
+              </div>
+              <div class="title-content">
+                <h2>选择货物</h2>
+                <p>选择需要调拨的货物并设置数量</p>
+              </div>
+            </div>
+            <el-button @click="goodsSelectorVisible = false" class="dialog-close" text>
+              <el-icon><Close /></el-icon>
+            </el-button>
+          </div>
+        </div>
+      </template>
       <!-- 筛选条件 -->
       <div class="goods-filter">
         <el-form :model="goodsFilter" inline>
@@ -536,6 +746,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Plus, Delete, View, Edit, Check, Close, Search, Warning, Box, Position, Refresh, MoreFilled } from '@element-plus/icons-vue'
 import { request } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
@@ -544,6 +755,28 @@ import dayjs from 'dayjs'
 const userStore = useUserStore()
 const loading = ref(false)
 const submitLoading = ref(false)
+
+// 移动端适配
+const isMobile = ref(false)
+
+// 检查是否为移动端
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 768
+}
+
+// 监听窗口大小变化
+const handleResize = () => {
+  checkMobile()
+}
+
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', handleResize)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+})
 const approvalLoading = ref(false)
 const dialogVisible = ref(false)
 const viewDialogVisible = ref(false)
@@ -1227,6 +1460,298 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+/* 现代化容器样式 */
+.modern-container {
+  background: #f8fafc;
+  min-height: 100vh;
+  padding: 24px;
+}
+
+/* 现代化头部样式 */
+.modern-header {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border-radius: 16px;
+  padding: 24px 32px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 16px;
+  }
+
+  .page-title {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .title-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 24px;
+    }
+
+    .title-content {
+      h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        color: #1e293b;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 4px 0 0 0;
+        font-size: 16px;
+        color: #64748b;
+        font-weight: 500;
+      }
+    }
+  }
+
+  .header-right {
+    .modern-button {
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(6, 182, 212, 0.3);
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4);
+      }
+    }
+  }
+}
+
+/* 现代化搜索表单样式 */
+.modern-search {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .search-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .search-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+
+      .el-icon {
+        color: #06b6d4;
+        font-size: 20px;
+      }
+    }
+  }
+
+  .search-form-content {
+    .el-form-item {
+      margin-bottom: 16px;
+      margin-right: 16px;
+
+      .el-form-item__label {
+        font-weight: 600;
+        color: #374151;
+      }
+    }
+
+    /* PC端横向布局 */
+    &:not(.mobile-form) {
+      .el-form-item {
+        display: inline-block;
+        vertical-align: top;
+      }
+    }
+  }
+
+  /* 移动端竖向布局 */
+  &.mobile-form {
+    .search-form-content {
+      .el-form-item {
+        display: block;
+        margin-bottom: 20px;
+        margin-right: 0;
+
+        .el-form-item__label {
+          width: 100% !important;
+          margin-bottom: 8px;
+          text-align: left !important;
+        }
+
+        .el-form-item__content {
+          margin-left: 0 !important;
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+/* 现代化表格样式 */
+.modern-table {
+  background: white;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+
+  .table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e2e8f0;
+
+    .table-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #1e293b;
+
+      .el-icon {
+        color: #06b6d4;
+        font-size: 20px;
+      }
+    }
+  }
+
+  .table-content {
+    .modern-data-table {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #e2e8f0;
+
+      .el-table__header {
+        background: #f8fafc;
+
+        th {
+          background: #f8fafc !important;
+          color: #374151;
+          font-weight: 600;
+          border-bottom: 1px solid #e2e8f0;
+        }
+      }
+    }
+  }
+}
+
+/* 移动端操作栏样式 */
+.mobile-actions {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+
+  .mobile-action-trigger {
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+    border: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .el-icon {
+      margin-right: 4px;
+      font-size: 14px;
+    }
+  }
+}
+
+.desktop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+
+  .action-btn {
+    border-radius: 6px;
+    font-size: 12px;
+    padding: 4px 8px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-1px);
+    }
+  }
+}
+
+/* 下拉菜单样式 */
+.el-dropdown-menu {
+  border-radius: 12px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  border: 1px solid #e2e8f0;
+  padding: 8px 0;
+
+  .el-dropdown-menu__item {
+    padding: 12px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #374151;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    margin: 2px 8px;
+
+    &:hover {
+      background: #f8fafc;
+      color: #1e293b;
+    }
+
+    .el-icon {
+      margin-right: 8px;
+      font-size: 16px;
+      color: #6b7280;
+    }
+
+    &.danger-item {
+      color: #dc2626;
+
+      &:hover {
+        background: #fef2f2;
+        color: #dc2626;
+      }
+
+      .el-icon {
+        color: #dc2626;
+      }
+    }
+  }
+}
+
 .text-success {
   color: #67c23a;
 }
@@ -1315,5 +1840,370 @@ onMounted(() => {
 
 .cursor-pointer {
   cursor: pointer;
+}
+</style>
+
+<!-- 全局样式 - 调拨单对话框 -->
+<style>
+/* 调拨单新增/编辑对话框样式 */
+.transfer-dialog .transfer-header {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.transfer-dialog .transfer-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.transfer-dialog .transfer-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.transfer-dialog .transfer-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.transfer-dialog .transfer-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.transfer-dialog .transfer-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.transfer-dialog .transfer-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.transfer-dialog .transfer-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.transfer-dialog .transfer-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 调拨单详情对话框样式 */
+.transfer-detail-dialog .transfer-detail-header {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.transfer-detail-dialog .transfer-detail-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 调拨单审批对话框样式 */
+.transfer-approval-dialog .transfer-approval-header {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.transfer-approval-dialog .transfer-approval-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 调拨单库存警告对话框样式 */
+.transfer-warning-dialog .transfer-warning-header {
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.transfer-warning-dialog .transfer-warning-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 调拨单货物选择对话框样式 */
+.transfer-goods-dialog .transfer-goods-header {
+  background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%) !important;
+  color: white !important;
+  padding: 24px 32px !important;
+  margin: -20px -24px 0 -24px !important;
+  border-radius: 12px 12px 0 0 !important;
+  position: relative !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .header-content {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  width: 100% !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .dialog-title {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .title-icon {
+  width: 48px !important;
+  height: 48px !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .title-icon .el-icon {
+  font-size: 24px !important;
+  color: white !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .title-content h2 {
+  margin: 0 !important;
+  font-size: 24px !important;
+  font-weight: 600 !important;
+  color: white !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .title-content p {
+  margin: 4px 0 0 0 !important;
+  font-size: 14px !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .dialog-close {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+  flex-shrink: 0 !important;
+  margin-left: auto !important;
+}
+
+.transfer-goods-dialog .transfer-goods-header .dialog-close:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* 移动端响应式 */
+@media (max-width: 768px) {
+  .transfer-dialog .transfer-header,
+  .transfer-detail-dialog .transfer-detail-header,
+  .transfer-approval-dialog .transfer-approval-header,
+  .transfer-warning-dialog .transfer-warning-header,
+  .transfer-goods-dialog .transfer-goods-header {
+    padding: 20px 16px !important;
+    margin: -20px -16px 0 -16px !important;
+  }
+
+  .transfer-dialog .transfer-header .title-icon,
+  .transfer-detail-dialog .transfer-detail-header .title-icon,
+  .transfer-approval-dialog .transfer-approval-header .title-icon,
+  .transfer-warning-dialog .transfer-warning-header .title-icon,
+  .transfer-goods-dialog .transfer-goods-header .title-icon {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .transfer-dialog .transfer-header .title-icon .el-icon,
+  .transfer-detail-dialog .transfer-detail-header .title-icon .el-icon,
+  .transfer-approval-dialog .transfer-approval-header .title-icon .el-icon,
+  .transfer-warning-dialog .transfer-warning-header .title-icon .el-icon,
+  .transfer-goods-dialog .transfer-goods-header .title-icon .el-icon {
+    font-size: 20px !important;
+  }
+
+  .transfer-dialog .transfer-header .title-content h2,
+  .transfer-detail-dialog .transfer-detail-header .title-content h2,
+  .transfer-approval-dialog .transfer-approval-header .title-content h2,
+  .transfer-warning-dialog .transfer-warning-header .title-content h2,
+  .transfer-goods-dialog .transfer-goods-header .title-content h2 {
+    font-size: 20px !important;
+  }
 }
 </style>
